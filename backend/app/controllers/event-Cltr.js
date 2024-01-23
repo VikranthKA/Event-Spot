@@ -1,0 +1,356 @@
+require("dotenv").config()
+const axios = require("axios")
+const moment = require('moment')
+const geolib = require('geolib')
+const { validationResult, body } = require('express-validator')
+const EventModel = require('../models/event-model')
+const _ = require('lodash')
+const jwt = require("jsonwebtoken")
+const CategoryModel = require("../models/category-model")
+const ProfileModel = require("../models/profile-model")
+
+
+
+async function getCoByGeoCode(data){
+    try{
+    const addressResponse =await axios.get(`https://geocode.maps.co/search?q=${data}&api_key=${process.env.GEO_CODE_API_KEY}`)
+    if(addressResponse.data.length===0){
+        return res.status(404).json({error:"Please give the correct Name of the place check if miss spell or try give another nearer location"})
+    }
+    return addressResponse.data
+    }catch(err){
+        console.log(err)
+        return res.status(404).json(err)
+    }
+}
+
+async function distanceBtwThem(source, dest) {
+    const distanceInMeters = geolib.getDistance(source, dest);
+    const distanceInKilometers = distanceInMeters / 1000; // Convert meters to kilometers
+    return distanceInKilometers;
+}
+
+const getCoByGeoApify = async (data,res) => {
+    const body = _.pick(req.body, ['building', 'locality', 'city', 'state', 'pincode', 'country']);
+   
+    const searchString = encodeURIComponent(`${req.body.building}, ${req.body.locality}, ${req.body.city}, ${req.body.state}, ${req.body.pincode}, ${req.body.country}`);
+    console.log(searchString, "data");
+    try {
+        const mapResponse = await axios.get(`https://api.geoapify.com/v1/geocode/search?text=${searchString}&apiKey=${process.env.GEO_APIFY_KEY}`);
+
+        if(mapResponse.data.features.length==0){
+            return  res.status(400).json({errors:[{msg:"Invalid address",path:'invalid address'}]})
+         }
+         const location = [mapResponse.data.features[0].properties.lon,mapResponse.data.features[0].properties.lat]
+        return location
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(err);
+    }
+};
+
+async function getCoByIndia_PostApi(code,res){
+    try{
+        const codeResponse = await axios.get(`https://api.postalpincode.in/pincode/${code}`)
+        return codeResponse.data
+    }catch(err){
+        console.log(err)
+        res.status(500).json(err)
+    }
+}
+
+async function getAddressByGeoCode (data){
+    
+    try{
+        const addressResponse = await axios.get(`https://geocode.maps.co/reverse?lat=${parseInt(data.lattitude)}&lon=${parseInt(data.longitude)}&api_key=${process.env.GEO_CODE_API_KEY}`)
+        if(addressResponse.data.lenght===0){
+            return res.status(404).json({error:"Lat and lon didnt find the address"})
+
+        }
+        return addressResponse.data
+    }catch(err){
+        console.log(err)
+    }
+
+}
+
+const totalTicketCount = (ticketType)=>{
+
+}
+// finding the total count of the ticket count
+function totalCount(ticketArray) {
+    return ticketArray.reduce((total, ticket) => total + ticket.ticketCount, 0);
+}
+
+function momentConvertion(date){
+    return moment(date).format("YYYY-MM-DD HH:mm:ss")
+    
+
+}
+
+const eventCltr = {}
+
+eventCltr.create = async(req, res) =>{
+    console.log(req.body,"i am body in the Event Controller")
+    return res.status(req.body)
+    const errors = validationResult(req)
+    if(!errors.isEmpty()){
+        return res.status(400).json({errors:errors.array()})
+    }
+    const body = _.pick(req.body,
+        [
+        "eventStartDateTime","eventEndDateTime",'title','description','fileInfo','category',
+        "ticketType","venueName","addressInfo","ticketSaleStartTime","ticketSaleEndTime"
+        ])
+
+
+    const event = new EventModel(body)
+    try{
+        //by token i get the userId
+        
+        event.organiserId = "659d3e20ecc5101851d012e6"
+
+        //by body i get the below 
+
+        event.eventStartDateTime = momentConvertion(body.eventStartDateTime)
+        event.ticketType =await body.ticketType.map((ele)=>({
+            ticketName: ele.ticketName,
+            ticketPrice:ele.ticketPrice,
+            ticketCount:ele.ticketCount,
+            remainingTickets:ele.ticketCount
+        }))
+
+        event.addressInfo = {
+            address:body.addressInfo.address,
+            city:body.addressInfo.city
+        }
+        
+
+        if(body.ticketSaleStartTime > event.eventStartDateTime){
+            event.ticketSaleStartTime = momentConvertion(ticketSaleStartTime) 
+        }
+
+
+        event.ticketSaleEndTime = momentConvertion(body.eventEndDateTime)
+
+        event.totalTickets =await totalCount(body.ticketType)
+        console.log(totalTicketCount)
+
+        
+        event.categoryId =await body.category;
+        
+        // event.organiserId = categoryId 
+        
+
+        
+        let longitude
+        let latitude
+        const data = await getCoByGeoCode(body.addressInfo.address)
+        console.data
+        data.map((ele)=>{
+            latitude= ele.lat
+             longitude = ele.lon
+        })
+
+        
+        event.location = {
+            type:"Point",
+            coordinates:[longitude,latitude]
+        }
+
+        //Means the ticket can be purchased even if the event not yet started
+       if( event.ticketSaleStartTime >=  event.eventStartDateTime  ) return res.status(400).json("Ticket live on must be greater than event start time")
+       
+       //When a event is Ended or Completed the ticket must be expires 
+       if( event.ticketSaleEndTime ==  event.eventEndDateTime  ) return res.status(400).json("Ticket live on must be greater than event start time")
+
+
+        
+        // event.fileInfo.title =await fileInfo.title
+        // event.fileInfo.file =await fileInfo.file
+
+        // event.fileInfo = {
+        //     title: body.fileInfo.title,
+        //     file: body.fileInfo.file
+        // };
+
+        await event.save()
+
+        // event.categoryId.forEach(async(ele)=>{
+        //     await CategoryModel.findByIdAndUpdate(ele.categoryId,{
+        //         $push:{event:event._id}
+        //     })
+        // })
+        
+        console.log(event)
+        return res.json(event)
+    } catch(e){
+        console.log(e)
+        res.status(500).json(e)
+    }
+}
+
+eventCltr.getRadiusValueEvent=async(req,res)=>{
+        
+        const {userlat,userlon,radius } =await req.params
+        try{    
+            
+            const radiusEvents = await EventModel.find({location: {$geoWithin: {$centerSphere: [[parseInt(userlon), parseInt(userlat)], radius / 3963.2]}}});
+            if(radiusEvents.length===0){
+                return res.status(404).json(radiusEvents)
+            }
+            const validEvents = radiusEvents.filter((event)=>{
+                return  event.isApproved === true && new Date(event.eventStartDateTime) >= new Date()
+            })
+            console.log(validEvents)
+
+
+            if(validEvents.length===0){
+                return res.status(404).json(validEvents)
+            }
+            return res.status(200).json(validEvents)
+
+
+
+                          
+        }catch(err){
+            return res.status(500).json({error:console.log(err)})
+
+        }
+    }
+
+
+
+eventCltr.distanceAmongThem = async (req, res) => {
+
+   
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    } else {
+        try {
+            const eventId = req.params.eventId
+            const userId =req.params.userId
+            console.log(eventId,userId)
+            // return res.json(eventId,userId)
+            const event = await EventModel.findById({ _id: eventId})
+            // return res.json(event)
+            if (!event || event.length === 0) {
+                console.log(event);
+                return res.status(404).json(event);
+            }
+
+            const profileInfo = await ProfileModel.findOne({ _id: userId });
+
+            if (!profileInfo) {
+                console.log(profileInfo);
+                return res.status(404).json(profileInfo);
+            }
+
+            const destCoordinates = event.location.coordinates;
+            const sourceCoordinates = profileInfo.location.coordinates;
+
+            if (!destCoordinates || !sourceCoordinates) {
+                return res.status(400).json({ errors: [{ msg: 'Invalid coordinates' }] });
+            }
+
+            const distanceResult = await distanceBtwThem(sourceCoordinates, destCoordinates);
+
+            if (!distanceResult) {
+                return res.status(400).json({ errors: [{ msg: 'Error calculating distance' }] });
+            }
+
+            return res.status(200).json({ distance: distanceResult + 'km' });
+
+        } catch (err) {
+            console.log(err);
+            return res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+        }
+    }
+};
+
+
+
+eventCltr.getAll = async(req,res)=>{
+    try{
+        const events =await EventModel.find()
+        if(!events || events.lenght===0){
+            res.status(404).json(events)
+        }
+        res.status(200).json(events)
+
+    }catch(err){
+        console.log(err)
+    }
+}
+
+eventCltr.getEvent = async (req, res) => {
+    try {
+        const {location} = req.query;
+        const {category} = req.query
+
+        const query = {};
+        if (location) {
+            query.location = location;
+        }
+        if (category) {
+            query.category = category;
+        }
+
+        const events = await EventModel.find(query);
+        res.status(200).json(events);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+
+eventCltr.updateEvent = async(req, res)=>{
+    const errors = validationResult(req)
+    if(!errors.isEmpty()){
+        res.status(400).json({errors:errors.array()})
+    } else {
+        const body = _.pick(req.body,['title','description'])
+        const id = req.params.id
+        console.log(body)
+        try{
+            const event = await EventModel.findOneAndUpdate({
+                _id:id,organiserId:req.user.id }, body, {new: true})
+                res.status(200).json(event)
+        } catch(e){
+            console.log(e)
+            res.status(500).json(e)
+        }
+    }
+}
+
+eventCltr.removeEvent = async(req, res)=>{
+    try{
+        const event = await EventModel.findOneAndDelete({
+            _id:req.params.id, organiserId: req.user.id
+        })
+        if(!event || event.lenght===0){
+            return res.status(404).json(event)
+        }
+        return res.status(200).json(event)
+    } catch(e){
+        return res.status(500).json(e)
+    }
+}
+
+eventCltr.getOneEvent = async(req,res)=>{
+    try{
+        const event = await EventModel.findOne({
+            _id:req.params.id, organiserId: req.user.id
+        })
+        res.status(200).json(event)
+    } catch(e){
+        res.status(500).json(e)
+    }
+}
+
+module.exports = eventCltr
+
+
+
+
