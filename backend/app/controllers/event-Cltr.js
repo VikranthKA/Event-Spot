@@ -90,27 +90,25 @@ function momentConvertion(date){
 
 const eventCltr = {}
 
+
 eventCltr.create = async(req, res) =>{
-    console.log(req.body,"i am body in the Event Controller")
-    return res.status(req.body)
+
     const errors = validationResult(req)
     if(!errors.isEmpty()){
         return res.status(400).json({errors:errors.array()})
     }
     const body = _.pick(req.body,
         [
-        "eventStartDateTime","eventEndDateTime",'title','description','fileInfo','category',
-        "ticketType","venueName","addressInfo","ticketSaleStartTime","ticketSaleEndTime"
+        "eventStartDateTime",'title','description',"ClipName","BrochureName",'category',
+        "ticketType","venueName","addressInfo","ticketSaleStartTime","ticketSaleEndTime","youTube","location","Actors"        
         ])
 
-
+    console.log(req.body)
     const event = new EventModel(body)
     try{
-        //by token i get the userId
         
-        event.organiserId = "659d3e20ecc5101851d012e6"
+        event.organiserId = "65b0a2c1e354ed9ab381540c"
 
-        //by body i get the below 
 
         event.eventStartDateTime = momentConvertion(body.eventStartDateTime)
         event.ticketType =await body.ticketType.map((ele)=>({
@@ -134,55 +132,47 @@ eventCltr.create = async(req, res) =>{
         event.ticketSaleEndTime = momentConvertion(body.eventEndDateTime)
 
         event.totalTickets =await totalCount(body.ticketType)
-        console.log(totalTicketCount)
 
         
-        event.categoryId =await body.category;
-        
-        // event.organiserId = categoryId 
-        
+        event.categoryId =body.category;
 
-        
-        let longitude
-        let latitude
-        const data = await getCoByGeoCode(body.addressInfo.address)
-        console.data
-        data.map((ele)=>{
-            latitude= ele.lat
-             longitude = ele.lon
-        })
+        event.posters = [{
+            ClipName:body.ClipName,
+            image:req.files.ClipFile[0].fieldname
+        },{
+            BrochureName:body.BrochureName,
+            image:req.files.BrochureFile[0].fieldname
+        }]
+
+ 
+        // const data = await getCoByGeoCode(body.addressInfo.address)
+        // console.data
+
 
         
         event.location = {
             type:"Point",
-            coordinates:[longitude,latitude]
+            coordinates:[body.location.lon,body.location.lat]
         }
 
         //Means the ticket can be purchased even if the event not yet started
        if( event.ticketSaleStartTime >=  event.eventStartDateTime  ) return res.status(400).json("Ticket live on must be greater than event start time")
        
        //When a event is Ended or Completed the ticket must be expires 
-       if( event.ticketSaleEndTime ==  event.eventEndDateTime  ) return res.status(400).json("Ticket live on must be greater than event start time")
+    //    if( event.ticketSaleEndTime ==  event.eventEndDateTime  ) return res.status(400).json("Ticket live on must be greater than event start time")
 
 
         
-        // event.fileInfo.title =await fileInfo.title
-        // event.fileInfo.file =await fileInfo.file
 
-        // event.fileInfo = {
-        //     title: body.fileInfo.title,
-        //     file: body.fileInfo.file
-        // };
 
+    
+    event.categoryId.forEach(async(ele)=>{
+            await CategoryModel.findByIdAndUpdate(ele.categoryId,{
+                    $push:{event:event._id}
+                })
+            })
+            
         await event.save()
-
-        // event.categoryId.forEach(async(ele)=>{
-        //     await CategoryModel.findByIdAndUpdate(ele.categoryId,{
-        //         $push:{event:event._id}
-        //     })
-        // })
-        
-        console.log(event)
         return res.json(event)
     } catch(e){
         console.log(e)
