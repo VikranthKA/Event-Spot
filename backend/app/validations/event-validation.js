@@ -1,64 +1,122 @@
 const Joi = require('joi')
 
-const eventValidationSchema = Joi.object({
+const schema = Joi.object({
+  eventStartDateTime: Joi.date().iso().required(),
+  title: Joi.string().required(),
+  description: Joi.string().required(),
+  venueName: Joi.string().required(),
+  ticketSaleStartTime: Joi.date().iso().required(),
+  ticketSaleEndTime: Joi.date().iso().required(),
+  category: Joi.string().required(),
+  ticketType: Joi.array().items(
+    Joi.object({
+      ticketName: Joi.string().required(),
+      ticketPrice: Joi.number().required(),
+      ticketCount: Joi.number().integer().required(),
+      remainingTickets: Joi.number().integer().required()
+    })
+  ).required(),
+  Actors: Joi.array().items(
+    Joi.object({
+      name: Joi.string().required()
+    })
+  ).required(),
+  ClipName: Joi.string().required(),
+  BrochureName: Joi.string().required(),
+  youTube: Joi.object({
+    title: Joi.string().required(),
+    url: Joi.string().uri().required()
+  }).required(),
+  addressInfo: Joi.object({
+    address: Joi.string().required(),
+    city: Joi.string().required()
+  }).required(),
+  location: Joi.object({
+    lon: Joi.number().required(),
+    lat: Joi.number().required()
+  }).required()
+});
 
-    eventStartDateTime:Joi.date().required(),
+const validatedRequest = (req,res,next)=>{
+   
+    const {error} = schema.validate(req.body)
+    if(error){
+        res.status(400).send(error.details[0].message)
+    }else{
+        next()
+    }
+}
 
-    eventEndDateTime:Joi.date().required(),
+const validateFiles = (req,res,next)=>{
+    if(!req.files ){
+        return res.status(400).send("Add the Files to the in the Clip and Brochure")
+    }
+    next()
+}
 
-    title:Joi.string().required(),
+module.exports = {validatedRequest,validateFiles}
 
-    description:Joi.string().required(),
+// Use this schema to validate your data
 
-    poster:Joi.array().items(Joi.object({
 
-        title:Joi.string().required(),
-
-        file:Joi.binary().encoding('base64').required()
-
-    })),
-    categoryId:Joi.array().items(Joi.string().required()),
+// const ticketTypeSchema = Joi.object({
+        
+//     ticketName:Joi.string().required(),
     
-    ticketType:Joi.array().items(Joi.object({
-        
-        ticketName:Joi.string().required(),
-        
-        tikcetPrice:Joi.number().required(),
-        
-        ticketCount:Joi.number().required(),
-   
-    })),
-   
-    totalTickets:Joi.number().required(),
-   
-    venueName:Joi.string().required(),
-   
-    addressInfo:Joi.object({
-   
-        address:Joi.string().required(),
-   
-        city:Joi.string().required()
-   
-    }),
-   
-    location:Joi.object({
-   
-        type:Joi.string().valid("Point").required(),
-   
-        coordinates: Joi.array().items(
+//     ticketPrice:Joi.number().required(),
+    
+//     ticketCount:Joi.number().required(),
 
-            Joi.number().min(-180).max(180), // Longitude
+// })
 
-            Joi.number().min(-90).max(90)     // Latitude
-            
-        ).length(2).required()   
-    }),
+// const actorSchema = Joi.object({
+//     name:Joi.string().required()
+// })
+
+// const youTubeSchema = Joi.object({
+//     title:Joi.string().required(),
+//     url:Joi.string().required()
+// })
+
+// const addressInfoSchema = Joi.object({
+//    address:Joi.string().required(),
+//     city:Joi.string().required()
+
+// })
+
+// const locationSchema=Joi.object({
+//     lon:Joi.string().required(),
+//     lat:Joi.string().required()
+// })
+
+// const eventSchema = Joi.object({
+
+//     eventStartDateTime:Joi.date().required(),
+
+//     title:Joi.string().required(),
+    
+//     description:Joi.string().required(),
+    
+//     venueName:Joi.string().required(),
+
+//     ticketSaleStartTime:Joi.date().required(),
    
-    ticketSaleStartTime:Joi.date().required(),
-   
-    ticketSaleEndTime:Joi.date().required()
+//     ticketSaleEndTime:Joi.date().required(),
 
-})
+//     categoryId:Joi.array().items(Joi.string().required()),
 
-module.exports = {eventSchema:eventValidationSchema}
+//     ticketType:Joi.array().items(ticketTypeSchema).required(),
 
+//     actors :Joi.array().items(actorSchema).required(),
+
+//     ClipName:Joi.string().required(),
+
+//     BrochureName:Joi.string().required(),
+
+//     youTube: youTubeSchema.required(),
+
+//     addressInfo: addressInfoSchema.required(),
+
+//     location:locationSchema.required()
+
+// })
