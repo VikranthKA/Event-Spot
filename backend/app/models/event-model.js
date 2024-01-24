@@ -2,13 +2,24 @@ const { Schema, model } = require("mongoose");
 
 const eventSchema = new Schema({
     eventStartDateTime: Date,
-    eventEndDateTime: Date,
     title: String,
     description: String,
-    poster: [{
+    youTube:{
         title: String,
-        file: String
+        url: String
+    },
+    posters:[{
+        ClipName:String,
+        image:{
+            type:String
+        }
+    },{
+        BrochureName:String,
+        image:{
+            type:String
+        }
     }],
+    
     categoryId: [{
         type: Schema.Types.ObjectId,
         ref: "CategoryModel"
@@ -31,7 +42,7 @@ const eventSchema = new Schema({
             enum: ['Point']
         },
         coordinates: {
-            type: [Number] // Geospatial data
+            type: [Number] // Geospatial data for 2d sphere
         }
     },
     organiserId: {
@@ -45,7 +56,7 @@ const eventSchema = new Schema({
     reviews: [{
         userId: {
             type: Schema.Types.ObjectId,
-            ref: 'User'
+            ref: 'UserModel'
         },
         title: String,
         body: String,
@@ -53,7 +64,6 @@ const eventSchema = new Schema({
     }],
     actors:[{
         name:String,
-        image:String
     }],
     ticketSaleStartTime: Date,
     ticketSaleEndTime: Date
