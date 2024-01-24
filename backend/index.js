@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(cors())
 app.use(express.static("public")) // public visible when in local file
-app.use(morgan('combined'))
+// app.use(morgan('combined'))
 
 const usercltr = require("./app/controllers/user-cltr")
 const eventCltr = require("./app/controllers/event-Cltr")

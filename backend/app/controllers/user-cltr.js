@@ -45,7 +45,7 @@ userCltr.login =async(req,res)=>{
     }else{
         const body  = _.pick(req.body,["email","password"])
         try{
-            const user = await UserModel.findOne({email:body.password})
+            const user = await UserModel.findOne({email:body.email})
             console.log(user)
             if(!user){
                 return res.status(400).json({error:"invalid email/password"})
