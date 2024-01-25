@@ -5,9 +5,6 @@ const cors = require("cors")
 const { checkSchema } = require("express-validator")
 const morgan = require('morgan');
 
-const multer = require("multer")
-
-
 const db = require("./config/db")
 
 const app = express()
@@ -17,9 +14,9 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(cors())
 app.use(express.static("public")) // public visible when in local file
-// app.use(morgan('combined'))
+app.use(morgan('combined'))
 
-const usercltr = require("./app/controllers/user-cltr")
+const usercltr = require("./app/controllers/user-cltr") 
 const eventCltr = require("./app/controllers/event-Cltr")
 const categoryCltr = require("./app/controllers/category-Cltr")
 const profileCltr = require("./app/controllers/profile-Cltr")
@@ -31,7 +28,21 @@ const { authenticateUser, authorizeUser } = require("./app/middleware/auth")
 const { decodeAddress, decodeLatLng } = require("./app/utils/decodeAddress")
 
 //setting up the multer middleware
-const { storage, staticpath } = require("./app/middleware/file-handling")
+const multer = require('multer')
+
+const path = require("path")
+
+const storage = multer.diskStorage({
+    destination:(req,file,cb)=>{
+        cb(null,'Uploads/images')
+    },
+    filename:(req,file,cb)=>{
+        const uniqueDateName = `${Date.now() }__${file.originalname}`
+        cb(null,uniqueDateName)
+    }   
+})
+
+const staticpath = path.join(__dirname,"/Uploads")
 app.use("/Uploads", express.static(staticpath))
 const upload = multer({ storage: storage })
 
@@ -41,7 +52,7 @@ const { userLoginSchema, userRegSchema, userUpdatePassword } = require("./app/va
 const categoryValidationSchema = require("./app/validations/category-validation")
 const { profileSchema } = require("./app/validations/profile-validation")
 const {reviewSchema} = require("./app/validations/review-validation")
-
+const {validatedRequest,validateFiles} = require("./app/validations/event-validation")
 //user APIs
 app.post("/api/user/register", checkSchema(userRegSchema), usercltr.register)
 app.post("/api/user/login", checkSchema(userLoginSchema), usercltr.login)
@@ -49,6 +60,7 @@ app.put("/api/user/updatepassword", authenticateUser, usercltr.updatePassword)
 app.get("/api/users", authenticateUser, authorizeUser(["Admin"]), usercltr.getAll)
 app.patch('/api/user/resetPassword/:token')
 //Deactivate the user cltr 
+
 
 
 // Profiles Info APIs
@@ -62,8 +74,8 @@ app.put("/api/profile", upload.single("profilePic"), profileCltr.update)
 
 //event ApiS
 app.post('/api/getAddress')
-// ,upload.array("actor"),upload.array('poster')
-app.post("/api/event",eventCltr.create)
+// 
+app.post("/api/event",upload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
 app.get("/api/event")
 app.put("/api/event/:eventId")
 app.delete("/api/event/:eventId")
