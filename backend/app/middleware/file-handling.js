@@ -13,7 +13,8 @@ const storage = multer.diskStorage({
     }   
 })
 
-const staticpath = path.join(__dirname,"/Uploads")
+const staticpath = path.join(__dirname,"/Uploads/images")
+console.log(staticpath)
 
 
 module.exports = {storage,staticpath}

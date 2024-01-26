@@ -2,8 +2,9 @@ require("dotenv").config()
 
 const express = require("express")
 const cors = require("cors")
+const path = require("path")
 const { checkSchema } = require("express-validator")
-const morgan = require('morgan');
+// const morgan = require('morgan');
 
 const multer = require("multer")
 
@@ -30,9 +31,11 @@ const reviewCltr = require("./app/controllers/review-Cltr")
 const { authenticateUser, authorizeUser } = require("./app/middleware/auth")
 const { decodeAddress, decodeLatLng } = require("./app/utils/decodeAddress")
 
+const staticpath = path.join(__dirname,"/Uploads/images")
+
 //setting up the multer middleware
-const { storage, staticpath } = require("./app/middleware/file-handling")
-app.use("/Uploads", express.static(staticpath))
+const { storage } = require("./app/middleware/file-handling")
+app.use("/Uploads/images", express.static(staticpath))
 const upload = multer({ storage: storage })
 
 

@@ -70,13 +70,13 @@ categoryCltr.delete=async(req,res)=>{
     // console.log(categoryId)
 
     try{
-        const cat  = await  CategoryModel.findOneAndDelete({_id:req.user.id,})
+        const cat  = await  CategoryModel.findByIdAndDelete({_id:req.user.id,})
         //check findByIDAndUpdate or One
         res.status(200).json(cat)
 
     }catch(err){
         console.log(err)
-        res.status(201).json(err)
+        res.status(500).json(err)
 
     }
 }
