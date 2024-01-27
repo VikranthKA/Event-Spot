@@ -76,7 +76,7 @@ app.put("/api/profile", upload.single("profilePic"), profileCltr.update)
 app.post('/api/getAddress')
 // 
 app.post("/api/event",upload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
-app.get("/api/event")
+app.get("/api/event",eventCltr.getAll)
 app.put("/api/event/:eventId")
 app.delete("/api/event/:eventId")
 
