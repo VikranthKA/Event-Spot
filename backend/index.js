@@ -2,8 +2,11 @@ require("dotenv").config()
 
 const express = require("express")
 const cors = require("cors")
+const path = require("path")
 const { checkSchema } = require("express-validator")
-const morgan = require('morgan');
+// const morgan = require('morgan');
+
+
 
 const db = require("./config/db")
 
@@ -14,9 +17,9 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(cors())
 app.use(express.static("public")) // public visible when in local file
-app.use(morgan('combined'))
+// app.use(morgan('combined'))
 
-const usercltr = require("./app/controllers/user-cltr") 
+const usercltr = require("./app/controllers/user-cltr")
 const eventCltr = require("./app/controllers/event-Cltr")
 const categoryCltr = require("./app/controllers/category-Cltr")
 const profileCltr = require("./app/controllers/profile-Cltr")
@@ -27,14 +30,15 @@ const reviewCltr = require("./app/controllers/review-Cltr")
 const { authenticateUser, authorizeUser } = require("./app/middleware/auth")
 const { decodeAddress, decodeLatLng } = require("./app/utils/decodeAddress")
 
+const staticpath = path.join(__dirname,"/Uploads/images")
+
 //setting up the multer middleware
 const multer = require('multer')
 
-const path = require("path")
 
 const storage = multer.diskStorage({
     destination:(req,file,cb)=>{
-        cb(null,'uploads/images')
+        cb(null,'Uploads/images')
     },
     filename:(req,file,cb)=>{
         const uniqueDateName = `${Date.now() }__${file.originalname}`
@@ -42,8 +46,7 @@ const storage = multer.diskStorage({
     }   
 })
 
-const staticpath = path.join(__dirname,"/uploads")
-app.use("/uploads", express.static(staticpath))
+app.use("/Uploads", express.static(staticpath))
 const upload = multer({ storage: storage })
 
 
@@ -52,7 +55,7 @@ const { userLoginSchema, userRegSchema, userUpdatePassword } = require("./app/va
 const categoryValidationSchema = require("./app/validations/category-validation")
 const { profileSchema } = require("./app/validations/profile-validation")
 const {reviewSchema} = require("./app/validations/review-validation")
-const {validatedRequest,validateFiles} = require("./app/validations/event-validation")
+
 //user APIs
 app.post("/api/user/register", checkSchema(userRegSchema), usercltr.register)
 app.post("/api/user/login", checkSchema(userLoginSchema), usercltr.login)
@@ -60,7 +63,6 @@ app.put("/api/user/updatepassword", authenticateUser, usercltr.updatePassword)
 app.get("/api/users", authenticateUser, authorizeUser(["Admin"]), usercltr.getAll)
 app.patch('/api/user/resetPassword/:token')
 //Deactivate the user cltr 
-
 
 
 // Profiles Info APIs
@@ -74,8 +76,8 @@ app.put("/api/profile", upload.single("profilePic"), profileCltr.update)
 
 //event ApiS
 app.post('/api/getAddress')
-// 
-app.post("/api/event",upload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
+// ,upload.array("actor"),upload.array('poster')
+app.post("/api/event",eventCltr.create)
 app.get("/api/event")
 app.put("/api/event/:eventId")
 app.delete("/api/event/:eventId")
