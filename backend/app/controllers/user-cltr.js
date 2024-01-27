@@ -37,7 +37,7 @@ userCltr.register = async (req, res) => {
   }
 };
 
-
+///deactive the account need to be done
 userCltr.login =async(req,res)=>{
     const errors = validationResult(req)
     if(!errors.isEmpty()){
@@ -52,13 +52,13 @@ userCltr.login =async(req,res)=>{
             }
             const result = await bcryptjs.compare(body.password,user.password)
             if(!result){
-                return res.status(400).json({error:"invalid email/password"})
+                return res.status(400).json("invalid email/password")
             }
             const tokenData = {
                 id:user._id,
                 role:user.role
             }
-            const token = jwt.sign(tokenData,process.env.JWT_SECRET,{expiresIn:"14d"})
+            const token = jwt.sign(tokenData,process.env.JWT_SECRET,{expiresIn:"7d"})
             res.status(200).json({token})
             
         }catch(err){
@@ -111,8 +111,8 @@ userCltr.updatePassword = async (req, res) => {
 
 userCltr.getAll =async(req,res)=>{
   try{
-    const userData  = await UserModel.find()
-    return res.status(200).json(userData)
+    const users  = await UserModel.find()
+    return res.status(200).json(users)
   }catch(err){
     console.log(err)
     return res.status(500).json(err)

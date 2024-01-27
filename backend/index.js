@@ -34,7 +34,7 @@ const path = require("path")
 
 const storage = multer.diskStorage({
     destination:(req,file,cb)=>{
-        cb(null,'Uploads/images')
+        cb(null,'uploads/images')
     },
     filename:(req,file,cb)=>{
         const uniqueDateName = `${Date.now() }__${file.originalname}`
@@ -42,8 +42,8 @@ const storage = multer.diskStorage({
     }   
 })
 
-const staticpath = path.join(__dirname,"/Uploads")
-app.use("/Uploads", express.static(staticpath))
+const staticpath = path.join(__dirname,"/uploads")
+app.use("/uploads", express.static(staticpath))
 const upload = multer({ storage: storage })
 
 

@@ -103,14 +103,13 @@ eventCltr.create = async(req, res) =>{
         "ticketType","venueName","addressInfo","ticketSaleStartTime","ticketSaleEndTime","youTube","location","Actors"        
         ])
 
-    console.log(req.body)
+        console.log(body.Actors)
     const event = new EventModel(body)
     try{
-        
         event.organiserId = "65b0a2c1e354ed9ab381540c"
 
-
         event.eventStartDateTime = momentConvertion(body.eventStartDateTime)
+
         event.ticketType =await body.ticketType.map((ele)=>({
             ticketName: ele.ticketName,
             ticketPrice:ele.ticketPrice,
@@ -123,50 +122,33 @@ eventCltr.create = async(req, res) =>{
             city:body.addressInfo.city
         }
         
-
         if(body.ticketSaleStartTime > event.eventStartDateTime){
             event.ticketSaleStartTime = momentConvertion(ticketSaleStartTime) 
         }
-
 
         event.ticketSaleEndTime = momentConvertion(body.eventEndDateTime)
 
         event.totalTickets =await totalCount(body.ticketType)
 
-        
-        event.categoryId =body.category;
+        if(body.categoryId ) event.categoryId =body.category
 
         event.posters = [{
             ClipName:body.ClipName,
-            image:req.files.ClipFile[0].fieldname
+            image:req.files.ClipFile[0].filename
         },{
             BrochureName:body.BrochureName,
-            image:req.files.BrochureFile[0].fieldname
-        }]
-
- 
-        // const data = await getCoByGeoCode(body.addressInfo.address)
-        // console.data
-
-
-        
+            image:req.files.BrochureFile[0].filename
+        }]        
         event.location = {
             type:"Point",
             coordinates:[body.location.lon,body.location.lat]
         }
+        event.actors = body.Actors
 
         //Means the ticket can be purchased even if the event not yet started
        if( event.ticketSaleStartTime >=  event.eventStartDateTime  ) return res.status(400).json("Ticket live on must be greater than event start time")
        
-       //When a event is Ended or Completed the ticket must be expires 
-    //    if( event.ticketSaleEndTime ==  event.eventEndDateTime  ) return res.status(400).json("Ticket live on must be greater than event start time")
-
-
-        
-
-
-    
-    event.categoryId.forEach(async(ele)=>{
+       event.categoryId.forEach(async(ele)=>{
             await CategoryModel.findByIdAndUpdate(ele.categoryId,{
                     $push:{event:event._id}
                 })
@@ -272,6 +254,19 @@ eventCltr.getAll = async(req,res)=>{
     }catch(err){
         console.log(err)
         return res.status(400).json(err)
+    }
+}
+
+eventCltr.getOne = async(req,res)=>{
+
+    try{
+        const event = await EventModel.findById({_id:req.params.eventId})
+    if(!event) return res.status.json("Error getting the Event")
+    return res.status(200).json(event)
+
+    }catch(err){
+        console.log(err)
+        return res.status(500).json(err)
     }
 }
 
