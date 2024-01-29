@@ -96,7 +96,7 @@ profileCltr.getAll=async(req,res)=>{
 
 profileCltr.getOne=async(req,res)=>{
     try{
-        const allProfile= ProfileModel.findOne({_id:req.user.id}).populate('userId')
+        const allProfile= ProfileModel.findById(req.user.id)
         if(!allProfile){
             res.status(404).json({error:"User not found"})
         }
