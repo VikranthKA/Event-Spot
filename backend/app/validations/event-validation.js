@@ -7,8 +7,8 @@ const schema = Joi.object({
   venueName: Joi.string().required(),
   ticketSaleStartTime: Joi.date().iso().required(),
   ticketSaleEndTime: Joi.date().iso().required(),
-  category: Joi.string().required(),
-  ticketType: Joi.array().items(
+  categoryId: Joi.string().hex().length(24).required(),
+    ticketType: Joi.array().items(
     Joi.object({
       ticketName: Joi.string().required(),
       ticketPrice: Joi.number().required(),
@@ -25,7 +25,7 @@ const schema = Joi.object({
   BrochureName: Joi.string().required(),
   youTube: Joi.object({
     title: Joi.string().required(),
-    url: Joi.string().uri().required()
+    url: Joi.string().required()
   }).required(),
   addressInfo: Joi.object({
     address: Joi.string().required(),
