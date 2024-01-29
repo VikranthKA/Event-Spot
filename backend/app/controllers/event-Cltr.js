@@ -166,7 +166,7 @@ eventCltr.create = async (req, res) => {
 
 eventCltr.getRadiusValueEvent = async (req, res) => {
 
-    const { userlat, userlon, radius } = await req.params
+    const { userlat, userlon, radius } = await req.params 
     try {
 
         const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlon), parseInt(userlat)], radius / 3963.2] } } });
