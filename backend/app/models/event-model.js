@@ -4,16 +4,23 @@ const eventSchema = new Schema({
     eventStartDateTime: Date,
     title: String,
     description: String,
+
+    // youtube is like a links
     youTube:{
         title: String,
         url: String
     },
+
+// we add the another video attribute to this
     posters:[{
         ClipName:String,
         image:{
             type:String
         }
     },{
+    //poster for the images
+
+
         BrochureName:String,
         image:{
             type:String
