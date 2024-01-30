@@ -20,8 +20,10 @@ async function getCoByGeoCode(data,res){
 const profileCltr = {}
 
 profileCltr.create = async (req, res) => {
+    console.log(req.body,'req.body')
     try {
       const body = {
+        userId:req.user.id,
         profilePic: req.file.filename, // This will contain information about the uploaded file
         description: req.body.description,
         address: req.body.address,
@@ -29,12 +31,13 @@ profileCltr.create = async (req, res) => {
         lonlat: req.body.lonlat,
         city: req.body.city,
       };
+      console.log('body')
   
       // Process the data as needed (e.g., save to the database)
       const profile = new ProfileModel(body)
       await profile.save()
       // Respond with the processed data
-      res.status(200).json(body);
+      res.status(200).json(profile);
     } catch (error) {
       console.error('Error creating profile:', error);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -49,7 +52,7 @@ profileCltr.update= async(req,res)=>{
     }else{
         const body = _.pick(req.body,["profilePic","description","addressInfo"])
         try{
-            const profileInfo = await ProfileModel.findOneAndUpdate({id:req.user.id},body,{new:true})
+            const profileInfo = await ProfileModel.findOneAndUpdate({id:req.user.id, userId:req.params.profileId},body,{new:true})
             if(!profileInfo){
                 return res.status(404).json({err:"Profile/user not found "})
             }
@@ -94,18 +97,24 @@ profileCltr.getAll=async(req,res)=>{
     }
 }
 
-profileCltr.getOne=async(req,res)=>{
-    try{
-        const allProfile= ProfileModel.findById(req.user.id)
-        if(!allProfile){
-            res.status(404).json({error:"User not found"})
-        }
-        res.status(200).json(allProfile)
-    }catch(err){
+profileCltr.getOne = async (req, res) => {
+
+    try {
+        console.log(req.user.id, 'user')
+        const profile = await ProfileModel.findOne({userId: req.user.id})
+        console.log(profile,req.user.id)
+        if (!profile){
+            return res.status(400).json("Error getting the Profile")
+        } 
+        return res.status(200).json(profile)
+
+    } catch (err) {
         console.log(err)
-        res.status(500).json(err)
+        return res.status(500).json(err)
     }
 }
+  
+  
 
 //The user cannot delete his profile but admin can or not
 // profileCltr.delete=async(req,res)=>{

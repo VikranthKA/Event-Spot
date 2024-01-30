@@ -11,6 +11,7 @@ const authenticateUser = (req,res,next)=>{
             id:tokenData.id,
             role:tokenData.role
         }
+        console.log(req.user)
         next()
 
     }catch(err){
