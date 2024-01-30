@@ -53,7 +53,7 @@ categoryCltr.update = async(req,res)=>{
     }else{
         const body = _.pick(req.body,["name"])
         try{
-            const cat = await CategoryModel.findByIdAndUpdate(categoryId,body,{new:true})
+            const cat = await CategoryModel.findByIdAndUpdate({_id:categoryId},body,{new:true})
             res.status(201).json(cat)
 
         }catch(err){
@@ -70,7 +70,7 @@ categoryCltr.delete=async(req,res)=>{
     // console.log(categoryId)
 
     try{
-        const cat  = await  CategoryModel.findByIdAndDelete({_id:req.user.id,})
+        const cat  = await  CategoryModel.findByIdAndDelete({_id:categoryId})
         //check findByIDAndUpdate or One
         res.status(200).json(cat)
 
