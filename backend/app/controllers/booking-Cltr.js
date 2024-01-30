@@ -4,27 +4,6 @@ const EventModel = require("../models/event-model")
 const _ = require("lodash")
 const bookingCltr = {}
 
-// const bookingSchema = new Schema({
-    
-//     userId:{
-//         type:Schema.Types.ObjectId,
-//         ref:"UserModel"
-//     },
-//     eventId:{
-//         type:Schema.Types.ObjectId,
-//         ref:"EventModel"
-//     },
-//     tickets : [ { ticketType:String, quantity:Number, amount:Number} ],
-//     status: {
-//         type:Schema.Types.ObjectId,
-//         ref:"PaymentModel"
-//     }
-
-// })
-
-
-
-
 bookingCltr.create= async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -59,11 +38,9 @@ const availableSeats = event.ticketType.every(ticketType => {
       eventId,
       tickets:ticketData
     });
-    // console.log(ticketData)
 
     await booking.save();
 
-    // Update remainingTickets in the EventModel
     const updatedTicketTypes = event.ticketType.map(ticketType => {
         const matchingTicket = ticketData && Array.isArray(ticketData) && ticketData.find(ticketInfo => ticketInfo._id === ticketType._id);
       

@@ -167,22 +167,24 @@ eventCltr.create = async (req, res) => {
 eventCltr.getRadiusValueEvent = async (req, res) => {
 
     const { userlat, userlon, radius } = await req.params 
+    console.log(userlat,userlon,radius)
     try {
 
         const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlon), parseInt(userlat)], radius / 3963.2] } } });
         if (radiusEvents.length === 0) {
-            return res.status(404).json(radiusEvents)
+            return res.status(404).json("Events Not Found in this radius : ",radius)
         }
-        const validEvents = radiusEvents.filter((event) => {
-            return event.isApproved === true && new Date(event.eventStartDateTime) >= new Date()
-        })
-        console.log(validEvents)
+        // const validEvents = radiusEvents.filter((event) => {
+        //     return event.isApproved === true && new Date(event.eventStartDateTime) >= new Date()
+        // })
+        // console.log(validEvents)
 
 
-        if (validEvents.length === 0) {
-            return res.status(404).json(validEvents)
-        }
-        return res.status(200).json(validEvents)
+        // if (validEvents.length === 0) {
+        //     return res.status(404).json(validEvents)
+        // }
+        // return res.status(200).json(validEvents)
+        return res.json(radiusEvents)
 
 
 

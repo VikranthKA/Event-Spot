@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(cors())
 app.use(express.static("public")) // public visible when in local file
-app.use(morgan('combined'))
+// app.use(morgan('combined'))
 
 const usercltr = require("./app/controllers/user-cltr") 
 const eventCltr = require("./app/controllers/event-Cltr")
@@ -77,6 +77,7 @@ app.post('/api/getAddress')
 // 
 app.post("/api/event",upload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
 app.get("/api/event",eventCltr.getAll)
+app.get("/api/event/:eventId",eventCltr.getOne)
 app.put("/api/event/:eventId")
 app.delete("/api/event/:eventId")
 

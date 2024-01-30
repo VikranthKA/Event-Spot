@@ -29,7 +29,8 @@ userCltr.register = async (req, res) => {
       }
 
       await user.save();
-      return res.status(201).json(user);
+      const {username} = user
+      return res.status(201).json(username);
     } catch (err) {
       console.error(err);
       return res.status(500).json(err);
