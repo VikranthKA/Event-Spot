@@ -27,10 +27,10 @@ const eventSchema = new Schema({
         }
     }],
     
-    categoryId: [{
+    categoryId: {
         type: Schema.Types.ObjectId,
         ref: "CategoryModel"
-    }],
+    },
     ticketType: [{
         ticketName: String,
         ticketPrice: Number,

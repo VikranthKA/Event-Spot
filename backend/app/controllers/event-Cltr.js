@@ -99,16 +99,18 @@ eventCltr.create = async (req, res) => {
     }
     const body = _.pick(req.body,
         [
-            "eventStartDateTime", 'title', 'description', "ClipName", "BrochureName", 'category',
+            "eventStartDateTime", 'title', 'description', "ClipName", "BrochureName", 'categoryId',
             "ticketType", "venueName", "addressInfo", "ticketSaleStartTime", "ticketSaleEndTime", "youTube", "location", "Actors"
         ])
-
-    console.log(body)
+    
+    console.log(req.body,"i am category")
+    console.log(body.categoryId,"hello")
     const event = new EventModel(body)
+    
     try {
-        event.organiserId = "65b0a2c1e354ed9ab381540c"
+        event.organiserId = req.user.id
 
-        event.categoryId = body.category
+        event.categoryId = body.categoryId
 
         event.eventStartDateTime = momentConvertion(body.eventStartDateTime)
 
@@ -132,7 +134,6 @@ eventCltr.create = async (req, res) => {
 
         event.totalTickets = await totalCount(body.ticketType)
 
-        if (body.categoryId) event.categoryId = body.category
 
         event.posters = [{
             ClipName: body.ClipName,
@@ -155,9 +156,10 @@ eventCltr.create = async (req, res) => {
         // await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { event: event._id } })
         await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
 
-          
-
-        return res.json(event)
+          const populatedEvent = event.populate("categoryId").populate("organiserId")
+            
+        console.log(event,"goodmoring")
+        return res.json(populatedEvent)
     } catch (e) {
         console.log(e)
         res.status(500).json(e)
@@ -249,7 +251,24 @@ eventCltr.distanceAmongThem = async (req, res) => {
 
 eventCltr.getAll = async (req, res) => {
     try {
-        const events = await EventModel.find().populate("organiserId").populate("categoryId")
+        const events = await EventModel.find(
+        ).populate({
+            path: "organiserId", select: "_id username email"
+        }).populate({
+            path: "categoryId" ,select:"name"
+        })
+        .populate({
+            path: 'reviews',
+            populate: {
+                path: 'userId',
+                model: 'UserModel',
+                select: '_id username email'
+            }
+        })
+        
+
+        console.log(events, "hi")
+        
         if (!events || events.lenght === 0) {
             res.status(404).json(events)
         }

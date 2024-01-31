@@ -52,7 +52,7 @@ const { userLoginSchema, userRegSchema, userUpdatePassword } = require("./app/va
 const categoryValidationSchema = require("./app/validations/category-validation")
 const { profileSchema } = require("./app/validations/profile-validation")
 const {reviewSchema} = require("./app/validations/review-validation")
-const {validatedRequest,validateFiles} = require("./app/validations/event-validation")
+const {validatedRequest,validateFiles} = require("./app/validations/event-validation");
 
 //user APIs
 app.post("/api/user/register", checkSchema(userRegSchema), usercltr.register)
@@ -64,15 +64,16 @@ app.patch('/api/user/resetPassword/:token')
 
 // Profiles Info APIs
 //
-app.post("/api/profile", upload.single("profilePic"), authenticateUser, profileCltr.create)
-app.get("/api/profile/:profileId",authenticateUser, profileCltr.getOne)
-app.put("/api/profile/:profileId", upload.single("profilePic"),authenticateUser, profileCltr.update)
+app.post("/api/profile",authenticateUser, upload.single("profilePic"),checkSchema(profileSchema), profileCltr.create)
+app.get("/api/profile",authenticateUser, profileCltr.getOne)
+app.put("/api/profile/:profileId", upload.single("profilePic"),authenticateUser, checkSchema(profileSchema),profileCltr.update)
+
 //user cannot delete the profile but i have written the cltr
 
 //event ApiS
 app.post('/api/getAddress')
 // 
-app.post("/api/event",upload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
+app.post("/api/event",authenticateUser,authorizeUser(["Organiser"]),upload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
 app.get("/api/event",eventCltr.getAll)
 app.get("/api/event/:eventId",eventCltr.getOne)
 app.put("/api/event/:eventId")
