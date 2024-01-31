@@ -20,7 +20,7 @@ async function getCoByGeoCode(data,res){
 const profileCltr = {}
 
 profileCltr.create = async (req, res) => {
-    console.log(req.body,'req.body')
+
     try {
       const body = {
         userId:req.user.id,
@@ -50,7 +50,15 @@ profileCltr.update= async(req,res)=>{
     if(!errors.isEmpty()){
         return res.status(400).json({error:errors.array()})
     }else{
-        const body = _.pick(req.body,["profilePic","description","addressInfo"])
+        const body = _.pick(req.body,["description","addressInfo"])
+        const tempBody = {
+            profilePic: req.file.filename, 
+            description: body.description,
+            address: req.body.address,
+            place_id: req.body.place_id,
+            lonlat: req.body.lonlat,
+            city: req.body.city,
+          }
         try{
             const profileInfo = await ProfileModel.findOneAndUpdate({id:req.user.id, userId:req.params.profileId},body,{new:true})
             if(!profileInfo){

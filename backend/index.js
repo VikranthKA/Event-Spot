@@ -53,6 +53,7 @@ const categoryValidationSchema = require("./app/validations/category-validation"
 const { profileSchema } = require("./app/validations/profile-validation")
 const {reviewSchema} = require("./app/validations/review-validation")
 const {validatedRequest,validateFiles} = require("./app/validations/event-validation")
+
 //user APIs
 app.post("/api/user/register", checkSchema(userRegSchema), usercltr.register)
 app.post("/api/user/login", checkSchema(userLoginSchema), usercltr.login)
@@ -61,16 +62,12 @@ app.get("/api/users", authenticateUser, authorizeUser(["Admin"]), usercltr.getAl
 app.patch('/api/user/resetPassword/:token')
 //Deactivate the user cltr 
 
-
-
 // Profiles Info APIs
 //
 app.post("/api/profile", upload.single("profilePic"), authenticateUser, profileCltr.create)
 app.get("/api/profile/:profileId",authenticateUser, profileCltr.getOne)
 app.put("/api/profile/:profileId", upload.single("profilePic"),authenticateUser, profileCltr.update)
 //user cannot delete the profile but i have written the cltr
-
-
 
 //event ApiS
 app.post('/api/getAddress')
@@ -83,13 +80,11 @@ app.delete("/api/event/:eventId")
 
 //get all the events based on the radius
 app.get("/api/event/:radius/:userlon/:userlat", eventCltr.getRadiusValueEvent)
-app.post("/api/reversecoding",)
+app.post("/api/reversecoding")
 
 
 //find the distance btw user and the event
 app.get("/api/event/:userId/:eventId", eventCltr.distanceAmongThem)
-
-
 
 //Booking Api S
 app.post("/api/event/:eventId/booking", bookingCltr.create)

@@ -112,7 +112,7 @@ userCltr.updatePassword = async (req, res) => {
 
 userCltr.getAll =async(req,res)=>{
   try{
-    const users  = await UserModel.find()
+    const users  = await UserModel.find({},-password)
     return res.status(200).json(users)
   }catch(err){
     console.log(err)

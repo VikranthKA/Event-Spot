@@ -249,7 +249,7 @@ eventCltr.distanceAmongThem = async (req, res) => {
 
 eventCltr.getAll = async (req, res) => {
     try {
-        const events = await EventModel.find()
+        const events = await EventModel.find().populate("organiserId").populate("categoryId")
         if (!events || events.lenght === 0) {
             res.status(404).json(events)
         }
