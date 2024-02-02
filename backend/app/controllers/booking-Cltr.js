@@ -20,8 +20,25 @@ bookingCltr.createBooking = async (req, res) => {
             ticketId:ticket._id,
             ticketType: ticket.ticketName,  // Assuming _id is the reference to EventModel
             quantity: ticket.Quantity,
+            ticketPrice:ticket.ticketPrice,
             totalAmount: ticket.totalAmount, // Include totalAmount for each ticket
         }));
+        // const transformedTickets = await Promise.all(tickets.map(async (ticket) => {
+        //     const eventInfo = await EventModel.findOne({ 'ticketType.ticketId': ticket._id });
+        
+        //     // Find the matching ticket within the ticketType array
+        //     const matchingTicket = eventInfo ? eventInfo.ticketType.find(t => t.ticketId === ticket._id) : null;
+        
+        //     return {
+        //         ticketId: ticket._id,
+        //         ticketType: ticket.ticketName,
+        //         quantity: ticket.Quantity,
+        //         totalAmount: ticket.totalAmount,
+        //         ticketPrice: matchingTicket ? matchingTicket.price : null,
+        //     };
+        // }));
+        
+        
 
         // Check if there are enough available seats for the specified ticket types
         const availableSeats = transformedTickets.every(ticket => {
@@ -89,10 +106,6 @@ const updatedTicketTypes = event.ticketType.map(eventTicket => {
     }
 };
 
-
-
-
-
 bookingCltr.TicketsInfo = async(req,res)=>{
     const {bookedId} = req.params
     try{
@@ -132,17 +145,13 @@ bookingCltr.TicketsInfo = async(req,res)=>{
 
 }
 
-
-
-
 ///write a logic in the FE and show Timer of the 5 min if the times exists more then, call canelPayment and also add button to the says cancel payment
 bookingCltr.cancelBooking= async(req,res)=>{
-    const {ticketData} = body //send the form front end 
+    const {bookingId} = req.params //send the form front end 
     
 
     
     try{
-        const {bookingId} = req.params.id
         const bookedEvent = await BookingModel.findOne({_id:bookingId,userId:req.user.id})
         //check the if the payment is create for this user and ticket if that sucess then say payment done
         
@@ -151,51 +160,13 @@ bookingCltr.cancelBooking= async(req,res)=>{
         }else if(bookedEvent.status===true){
             return res.status.json(200).json({bookedEvent:bookedEvent.tickets,message:"You have already booked"})
         }else{
-        //     ticketData=[
-        //         {
-        //          "_id":"65a186661351d7e0b9fc73b2",  
-        //         "ticketType":"Gold Class",
-        //         "quantity":2, 
-        //         "amount":3000
-        //        } 
-        //    ]
-
-            try{
-                // const undoTicketBooking = EventModel.findByIdAndUpdate({_id:bookingId},{
-                //     // chatGPT fill the code to canel the booking realse the reserved seats
-                // },{new:true})
-                const event = await EventModel.findById(bookedEvent.eventId);
-
-        if (event) {
-          for (const ticket of ticketData) {
-            const reservedSeatIndex = event.reservedSeats.findIndex((seat) => seat._id === ticket._id);
-            if (reservedSeatIndex !== -1) {
-              event.reservedSeats.splice(reservedSeatIndex, 1);
-            }
-          }
-
-          await event.save();
+            return res.status(200).json("Your confirmed seats are canceled")
+                //write the logic of re updating the tickets in the event
         }
-
-        // Update the booking status to canceled
-        bookedEvent.status = false;
-        await bookedEvent.save()
-
-        return res.status(200).json({ message: "Booking canceled successfully" });
-
-            }catch(err){
-                console.log(err)
-                return res.status(500).json({err,info:"Can undo the tickets booked"})
-            }
-        }
-        
-       
-
-        
     }catch(err){
         console.log(err)
         return res.status(500).json(err)
-}
+    }
 }
 
 

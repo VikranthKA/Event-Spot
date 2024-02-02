@@ -18,7 +18,8 @@ const bookingSchema = new Schema({
         },
         ticketType:String, 
         quantity:Number, 
-        totalAmount:Number
+        totalAmount:Number,
+        ticketPrice:Number
     }
     ],
 

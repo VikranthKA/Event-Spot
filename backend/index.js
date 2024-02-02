@@ -90,6 +90,7 @@ app.get("/api/event/:userId/:eventId", eventCltr.distanceAmongThem)
 //Booking Api S
 app.post("/api/event/:eventId/booking",authenticateUser, bookingCltr.createBooking)
 app.get("/api/ticket/:bookedId",authenticateUser,bookingCltr.TicketsInfo)
+app.delete("/api/booking/:bookingId",authenticateUser,bookingCltr.cancelBooking)
 
 //Payment API s
 app.post("/api/booking/:bookingId/payment",authenticateUser,paymentCltr.paymentCheckoutSession)

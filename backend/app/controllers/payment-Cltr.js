@@ -49,7 +49,7 @@ paymentCltr.paymentCheckoutSession = async (req, res) => {
               product_data: {
                 name: ticket.ticketType,
               },
-              unit_amount: ticket.totalAmount, // not done the converting to cents for usd
+              unit_amount: ticket.ticketPrice * 100, // not done the converting to cents for usd
             },
             quantity: ticket.quantity,
           };
@@ -62,8 +62,7 @@ paymentCltr.paymentCheckoutSession = async (req, res) => {
         const totalPaidAmount = bookedEvent.tickets.reduce((acc,cv ) => {
             return acc + cv.totalAmount;
           }, 0);
-        console.log(totalPaidAmount,"amount")
-
+        console.log({id:session.id,url:session.url})
         res.json({id:session.id,url:session.url})
 
         if(session.id){

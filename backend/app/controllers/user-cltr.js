@@ -55,12 +55,18 @@ userCltr.login =async(req,res)=>{
             if(!result){
                 return res.status(400).json("invalid email/password")
             }
+            if(user.isActive){
             const tokenData = {
                 id:user._id,
                 role:user.role
             }
             const token = jwt.sign(tokenData,process.env.JWT_SECRET,{expiresIn:"7d"})
             res.status(200).json({token})
+
+          }else{
+              return res.status(403).json("You'r account is blocked by Admin")
+          }
+
             
         }catch(err){
             console.log(err)

@@ -7,6 +7,10 @@ const userSchema = new Schema({
     password:String,
     mobile :Number,
     role:String,
+    isActive:{
+        type:Boolean,
+        default:true
+    }
 
 })
 
