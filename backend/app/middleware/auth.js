@@ -16,12 +16,11 @@ const authenticateUser =async (req,res,next)=>{
         if(user.isActive){
             next()
         }else{
-            return res.status(403).json("You'r account is blocek by user")
+             res.status(403).json("You'r account is blocked by admin")
         }
-
     }catch(err){
         console.log(err)
-        res.status(400).json(err)
+        res.status(500).json(err)
     }
 }
 

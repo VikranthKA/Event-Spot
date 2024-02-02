@@ -38,6 +38,7 @@ paymentCltr.paymentCheckoutSession = async (req, res) => {
             country: 'US', 
         },
     })
+    console.log(bookedEvent)
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: [body.card],
@@ -56,13 +57,14 @@ paymentCltr.paymentCheckoutSession = async (req, res) => {
         }),
         customer:customer.id,
 
-        success_url: `${process.env.SERVER_URL}/success.html`,
-        cancel_url: `${process.env.SERVER_URL}/cancel.html`,
+        success_url: `${process.env.SERVER_URL}/success`,
+        cancel_url: `${process.env.SERVER_URL}/cancel`,
       }); 
+      console.log(bookedEvent,"i am event")
         const totalPaidAmount = bookedEvent.tickets.reduce((acc,cv ) => {
             return acc + cv.totalAmount;
           }, 0);
-        console.log({id:session.id,url:session.url})
+        console.log(totalPaidAmount)
         res.json({id:session.id,url:session.url})
 
         if(session.id){
@@ -74,29 +76,93 @@ paymentCltr.paymentCheckoutSession = async (req, res) => {
             paymentType:session.payment_method_types[0],
             transaction_Id:session.id
         })
-
-        await paymentPending.save()
+      await paymentPending.save()
         
       }
 
     } catch (err) {
       console.error(err);
-      return res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ error: "Internal server error" })
     }
   }
 };
 
 paymentCltr.updatedPayment = async(req,res)=>{
-  const {transactionId,bookingId} = req.body
+  const {stripeId} = req.body
   try{
-    const payment = await PaymentModel.findOneAndUpdate({transaction_Id:id},{status:true},{new:true})
-    if(payment.status === false){
-      const bookedStatusTrue =await BookingModel.findByIdAndUpdate({_id:bookingId,userId:req.user.id},{status:true})
+    console.log("1")
+    const payment = await PaymentModel.findOneAndUpdate(
+      { transaction_Id: stripeId },
+      { status: true },
+      { new: true }
+    );
+        console.log(payment,"paymentInfo")
+    if(payment.status === true){
+      console.log("2")
+      const booking = await BookingModel.findOneAndUpdate({_id:payment.bookingId,userId:req.user.id},{status:true})
+        console.log(booking)
+        //add booking is working 
+      const addBooking = await ProfileModel.findOneAndUpdate({userId:req.user.id},{$push:{bookings:booking._id}})
+      console.log(addBooking)
 
+    console.log("3")
+
+      res.status(200).json("Payment Successfull", booking.totalAmount,"Rs")
     }
+    if(!payment) return res.status(404).json("Cannot find the Payment Info")
 
   } catch(err){
     return res.status(200).json("payment sucess")
+  }
+}
+
+// paymentCltr.updatedPayment = async (req, res) => {
+//   const { transactionId } = req.body;
+//   try {
+//     console.log("1");
+//     const payment = await PaymentModel.findOneAndUpdate(
+//       { transaction_Id: transactionId },  // Updated variable name
+//       { status: true },
+//       { new: true }
+//     );
+//     console.log(payment, "paymentInfo");
+//     if (payment && payment.status === true) {
+//       console.log("2");
+//       const booking = await BookingModel.findOneAndUpdate(
+//         { _id: payment.bookingId, userId: req.user.id },
+//         { status: true }
+//       );
+//       console.log(booking);
+//       const addBooking = await ProfileModel.findOneAndUpdate(
+//         { userId: req.user.id },
+//         { $push: { bookings: booking._id } }
+//       );
+//       console.log(addBooking);
+
+//       console.log("3");
+
+//       res.status(200).json({
+//         message: "Payment Successful",
+//         totalAmount: booking.totalAmount,
+//         currency: "Rs"
+//       });
+//     } else {
+//       return res.status(404).json("Cannot find the Payment Info");
+//     }
+//   } catch (err) {
+//     return res.status(500).json("Payment failed");
+//   }
+// };
+
+
+
+paymentCltr.deletePayment  = async(req,res)=>{
+  const {paymentId} = req.params
+  try{
+    await PaymentModel.findOneAndDelete({userId:req.user.id,transaction_Id:paymentId})
+    return res.status(200).json("Somthing went wrong on the payment")
+  }catch(err){//write the status code for payments
+    return res.json(EvalError)
   }
 }
 
