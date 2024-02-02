@@ -23,7 +23,7 @@ const profileSchema = new Schema({
     },
     bookings:[{
         type:Schema.Types.ObjectId,
-        ref:"UserModel"
+        ref:"BookingModel"
     }]
 
 })

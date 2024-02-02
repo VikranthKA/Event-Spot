@@ -10,11 +10,19 @@ const bookingSchema = new Schema({
         type:Schema.Types.ObjectId,
         ref:"EventModel"
     },
-    tickets : [ {
-         ticketType:String,
-         quantity:Number, 
-         amount:Number
-    } ],
+    tickets : [
+         { 
+        ticketId:{
+            type:Schema.Types.ObjectId,
+            ref:"EventModel"
+        },
+        ticketType:String, 
+        quantity:Number, 
+        totalAmount:Number
+    }
+    ],
+
+    
     status: {
         type:Schema.Types.ObjectId,
         ref:"PaymentModel",
@@ -29,15 +37,3 @@ module.exports = BookingModel
 
 
 
-
-
-
-
-
-
-
-// # Booking
-//     customerId
-//     eventId
-//     
-//     status -

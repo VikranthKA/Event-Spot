@@ -10,16 +10,15 @@ const paymentSchema = new Schema({
         type:Schema.Types.ObjectId,
         ref:"BookingModel"
     },
-    paymentDate:Number,
+    paymentDate:Date,
     amount :Number,
     paymentType:String,
+    transaction_Id:String,
     status:{
         type:Boolean,   //Payment 
         default:false
     }
   
-
-
 })
 
 const PaymentModel = model("PaymentModel",paymentSchema)

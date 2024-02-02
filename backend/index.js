@@ -88,10 +88,11 @@ app.post("/api/reversecoding")
 app.get("/api/event/:userId/:eventId", eventCltr.distanceAmongThem)
 
 //Booking Api S
-app.post("/api/event/:eventId/booking", bookingCltr.create)
+app.post("/api/event/:eventId/booking",authenticateUser, bookingCltr.createBooking)
+app.get("/api/ticket/:bookedId",authenticateUser,bookingCltr.TicketsInfo)
 
 //Payment API s
-app.post("/api/booking/:bookingId/payment", paymentCltr.paymentCheckoutSession)
+app.post("/api/booking/:bookingId/payment",authenticateUser,paymentCltr.paymentCheckoutSession)
 
 //Review the Event
 app.post("/api/review/:eventId",authenticateUser,authorizeUser(['Customer']),checkSchema(reviewSchema),reviewCltr.create)
