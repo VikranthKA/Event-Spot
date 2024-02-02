@@ -266,9 +266,6 @@ eventCltr.getAll = async (req, res) => {
             }
         })
         
-
-        console.log(events, "hi")
-        
         if (!events || events.lenght === 0) {
             res.status(404).json(events)
         }

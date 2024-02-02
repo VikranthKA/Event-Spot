@@ -95,7 +95,9 @@ app.post("/api/booking/:bookingId/payment", paymentCltr.paymentCheckoutSession)
 
 //Review the Event
 app.post("/api/review/:eventId",authenticateUser,authorizeUser(['Customer']),checkSchema(reviewSchema),reviewCltr.create)
-app.put("/api/review/:reviewId")
+app.put("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), checkSchema(reviewSchema), reviewCltr.update);
+app.delete("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), reviewCltr.delete);
+
 app.delete('/api/review/:reviewId')
 
 

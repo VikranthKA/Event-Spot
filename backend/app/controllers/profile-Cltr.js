@@ -5,6 +5,7 @@ const { validationResult } = require("express-validator")
 const axios = require("axios")
 const UserModel = require("../models/user-model")
 
+
 async function getCoByGeoCode(data,res){
     try{
     const addressResponse =await axios.get(`https://geocode.maps.co/search?q=${data}&api_key=${process.env.GEO_CODE_API_KEY}`)
@@ -101,17 +102,24 @@ profileCltr.getAll=async(req,res)=>{
 profileCltr.getOne = async (req, res) => {
 
     try {
-        const profile = await ProfileModel.findOne({_id:req.params.profileId},{userId: req.user.id}).populate("userId")
-        if (!profile){
-            return res.status(400).json("Error getting the Profile")
+        // Find the profile by profileId and ensure it belongs to the authenticated user
+        const profile = await ProfileModel.findOne({ userId: req.user.id} ).populate("userId");
+        
+        if (!profile) {
+            // If profile is not found or doesn't belong to the authenticated user
+            return res.status(404).json({ error: "Profile not found or unauthorized access" });
         } 
-        return res.status(200).json(profile)
-
+    
+        // Successfully found and populated the profile
+        return res.status(200).json(profile);
     } catch (err) {
-        console.log(err)
-        return res.status(500).json(err)
+        console.error(err);
+    
+        // Handle unexpected errors
+        return res.status(500).json({ error: "Internal Server Error" });
     }
 }
+    
 // The user cannot delete his profile but admin can or not
 profileCltr.delete=async(req,res)=>{
     try{
@@ -128,5 +136,5 @@ profileCltr.delete=async(req,res)=>{
 
 
 
-module.exports = profileCltr
+module.exports = profileCltr  
 
