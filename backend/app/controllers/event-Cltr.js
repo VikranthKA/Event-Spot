@@ -149,14 +149,25 @@ eventCltr.create = async (req, res) => {
         event.actors = body.Actors
 
         //Means the ticket can be purchased even if the event not yet started
-        if (event.ticketSaleStartTime >= event.eventStartDateTime) return res.status(400).json("Ticket live on must be greater than event start time")
+        // if (event.ticketSaleStartTime >= event.eventStartDateTime) return res.status(400).json("Ticket live on must be greater than event start time")
 
         await event.save()
-        console.log(event._id,event.categoryId)
         // await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { event: event._id } })
         await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
 
-          const populatedEvent = event.populate("categoryId").populate("organiserId")
+          const populatedEvent = event.populate({
+            path: "organiserId", select: "_id username email"
+        }).populate({
+            path: "categoryId" ,select:"name"
+        })
+        .populate({
+            path: 'reviews',
+            populate: {
+                path: 'userId',
+                model: 'UserModel',
+                select: '_id username email'
+            }
+        })
             
         console.log(event,"goodmoring")
         return res.json(populatedEvent)
@@ -172,7 +183,19 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
     console.log(userlat,userlon,radius)
     try {
 
-        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlon), parseInt(userlat)], radius / 3963.2] } } });
+        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlon), parseInt(userlat)], radius / 3963.2] } } }).populate({
+            path: "organiserId", select: "_id username email"
+        }).populate({
+            path: "categoryId" ,select:"name"
+        })
+        .populate({
+            path: 'reviews',
+            populate: {
+                path: 'userId',
+                model: 'UserModel',
+                select: '_id username email'
+            }
+        })
         if (radiusEvents.length === 0) {
             return res.status(404).json("Events Not Found in this radius : ",radius)
         }
@@ -265,7 +288,7 @@ eventCltr.getAll = async (req, res) => {
                 select: '_id username email'
             }
         })
-        
+ 
         if (!events || events.lenght === 0) {
             res.status(404).json(events)
         }
@@ -311,23 +334,91 @@ eventCltr.getEvent = async (req, res) => {
 };
 
 
-eventCltr.updateEvent = async (req, res) => {
+eventCltr.update = async (req, res) => {
+
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
-        res.status(400).json({ errors: errors.array() })
-    } else {
-        const body = _.pick(req.body, ['title', 'description'])
-        const id = req.params.id
-        console.log(body)
-        try {
-            const event = await EventModel.findOneAndUpdate({
-                _id: id, organiserId: req.user.id
-            }, body, { new: true })
-            res.status(200).json(event)
-        } catch (e) {
-            console.log(e)
-            res.status(500).json(e)
+        return res.status(400).json({ errors: errors.array() })
+    }
+    const body = _.pick(req.body,
+        [
+            "eventStartDateTime", 'title', 'description', "ClipName", "BrochureName", 'categoryId',
+            "ticketType", "venueName", "addressInfo", "ticketSaleStartTime", "ticketSaleEndTime", "youTube", "location", "Actors"
+        ])
+    const event = new EventModel(body)
+    
+    try {
+        // if (event.ticketSaleStartTime >= event.eventStartDateTime) return res.status(400).json("Ticket live on must be greater than event start time")
+
+        event.organiserId = req.user.id
+
+        if(body.categoryId) event.categoryId = body.categoryId
+
+        if(event.eventStartDateTime) event.eventStartDateTime = momentConvertion(body.eventStartDateTime)
+
+        if(body.ticketType) {
+            event.ticketType = await body.ticketType.map((ele) => ({
+                ticketName: ele.ticketName,
+                ticketPrice: ele.ticketPrice,
+                ticketCount: ele.ticketCount,
+                remainingTickets: ele.ticketCount
+            }))
+            event.totalTickets = await totalCount(body.ticketType)
         }
+        if(body.addressInfo.address ) {
+            event.addressInfo = {
+                address: body.addressInfo.address,
+            }
+        }
+        if(body.addressInfo.city ) {
+            event.addressInfo = {
+                address: body.addressInfo.city,
+            }
+        }
+        if(event.ticketSaleStartTime)event.ticketSaleStartTime = momentConvertion(ticketSaleStartTime)
+        
+        if(event.ticketSaleEndTime)event.ticketSaleEndTime = momentConvertion(body.eventEndDateTime)
+
+        event.posters = [{
+            ClipName: body.ClipName,
+            image: req.files.ClipFile[0].filename
+        }, {
+            BrochureName: body.BrochureName,
+            image: req.files.BrochureFile[0].filename
+        }]
+
+        
+
+
+        event.location = {
+            type: "Point",
+            coordinates: [body.location.lon, body.location.lat]
+        }
+        event.actors = body.Actors
+
+
+        await event.save()
+
+        await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
+
+          const populatedEvent = event.populate({
+            path: "organiserId", select: "_id username email"
+        }).populate({
+            path: "categoryId" ,select:"name"
+        })
+        .populate({
+            path: 'reviews',
+            populate: {
+                path: 'userId',
+                model: 'UserModel',
+                select: '_id username email'
+            }
+        })
+            
+        return res.json(populatedEvent)
+    } catch (e) {
+        console.log(e)
+        res.status(500).json(e)
     }
 }
 
@@ -351,7 +442,7 @@ eventCltr.getOneEvent = async (req, res) => {
             _id: req.params.id, organiserId: req.user.id
         })
         res.status(200).json(event)
-    } catch (e) {
+    } catch (err) {
         res.status(500).json(e)
     }
 }

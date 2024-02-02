@@ -1,67 +1,137 @@
-const { validationResult } = require("express-validator")
-const BookingModel = require("../models/booking-model")
-const EventModel = require("../models/event-model")
-const _ = require("lodash")
-const bookingCltr = {}
+const { validationResult } = require("express-validator");
+const BookingModel = require("../models/booking-model");
+const EventModel = require("../models/event-model");
+const ProfileModel = require("../models/profile-model");
 
-bookingCltr.create= async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ error: errors.array() });
-  }
+const bookingCltr = {};
 
-  const { eventId } = req.params;
-  const { ticketData } = req.body;
+bookingCltr.createBooking = async (req, res) => {
+    const { eventId } = req.params;
+    const { tickets } = req.body;
 
-  try {
-    const event = await EventModel.findById(eventId);
-    if (!event) {
-      return res.status(404).json({ error: 'Cannot find the Event' });
-    }
-
-const availableSeats = event.ticketType.every(ticketType => {
-  const matchingTicket = ticketData && Array.isArray(ticketData) && ticketData.find(ticketInfo => ticketInfo._id === ticketType._id)
-
-      if (!matchingTicket) {
-        // If the ticket type is not present in the ticketData, consider it as available.
-        return true;
-      }
-
-      return ticketType.remainingTickets >= matchingTicket.quantity;
-    });
-
-    if (!availableSeats) {
-      return res.status(400).json({ error: 'Not enough available seats for the specified ticket types' });
-    }
-
-    const booking = new BookingModel({
-      eventId,
-      tickets:ticketData
-    });
-
-    await booking.save();
-
-    const updatedTicketTypes = event.ticketType.map(ticketType => {
-        const matchingTicket = ticketData && Array.isArray(ticketData) && ticketData.find(ticketInfo => ticketInfo._id === ticketType._id);
-      
-        if (matchingTicket) {
-          ticketType.remainingTickets -= matchingTicket.quantity;
+    try {
+        const event = await EventModel.findById(eventId);
+        if (!event) {
+            return res.status(404).json({ error: 'Cannot find the Event' });
         }
-      
-        return ticketType;
-      });
-      
 
-    await EventModel.findByIdAndUpdate(eventId, {
-      ticketType: updatedTicketTypes,
-    });
+        // Transform the incoming tickets array to match the BookingModel structure
+        const transformedTickets = tickets.map(ticket => ({
+            ticketId:ticket._id,
+            ticketType: ticket.ticketName,  // Assuming _id is the reference to EventModel
+            quantity: ticket.Quantity,
+            totalAmount: ticket.totalAmount, // Include totalAmount for each ticket
+        }));
 
-    return res.status(201).json( booking)
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
+        // Check if there are enough available seats for the specified ticket types
+        const availableSeats = transformedTickets.every(ticket => {
+            const matchingTicket = event.ticketType.find(eventTicket => eventTicket.ticketName === ticket.ticketType);
+        
+            if (!matchingTicket) {
+                console.log(matchingTicket, "matc");
+                return false; // Ticket not found in the event.ticketType array
+            }
+        
+            return matchingTicket.remainingTickets >= ticket.quantity;
+        });
+        
+        
+
+        if (!availableSeats) {
+            return res.status(400).json({ error: 'Not enough available seats for the specified ticket types' });
+        }
+
+        // Calculate the overall amount for the booking
+        const totalAmount = transformedTickets.reduce((total, ticket) => total + ticket.totalAmount, 0);
+
+        // Create a new booking instance with the event ID and transformed tickets
+        const booking = new BookingModel({
+            userId: req.user.id,
+            eventId,
+            tickets: transformedTickets,
+            amount: totalAmount,
+            status: null
+        });
+
+        // Save the booking to the database
+
+        // Update the remaining tickets for each ticket type in the event
+// Update the remaining tickets for each ticket type in the event
+const updatedTicketTypes = event.ticketType.map(eventTicket => {
+    const matchingTicket = transformedTickets.find(ticket => ticket.ticketType === eventTicket.ticketName);
+
+    if (matchingTicket) {
+        // Subtract the booked quantity from the remaining tickets
+        eventTicket.remainingTickets -= matchingTicket.quantity;
+
+    }
+
+    return eventTicket;
+});
+
+
+        // Update the event in the database with the modified ticket types
+        try{
+            const updatedEvent = await EventModel.findByIdAndUpdate(eventId, {
+                ticketType: updatedTicketTypes,
+            },{new:true});
+            //this not needed
+        }catch(err){
+            return res.status(err)
+        }
+        (await (await booking.save()).populate("userId")).populate("eventId")
+        const addBooking = await ProfileModel.findOneAndUpdate({userId:req.user.id},{$push:{bookings:booking._id}})
+        
+        return res.status(201).json(booking);
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(err);
+    }
+};
+
+
+
+
+
+bookingCltr.TicketsInfo = async(req,res)=>{
+    const {bookedId} = req.params
+    try{
+        const ticketInfo = await BookingModel.findOne(
+            {
+                _id:bookedId,
+                userId:req.user.id
+
+            }).populate(
+                {
+                    path:"userId",
+                    select:"_id username email"
+            }).populate(
+                {
+                    path:"eventId",
+                    select:"title eventStartDateTime venueName"
+            })
+            // .populate({
+            //     path: 'tickets',
+            //     populate: {
+            //         path: 'ticketId',
+            //         model: 'EventModel',
+            //         select: '_id ticketName ticketPrice'
+            //     }
+            // })
+              
+        if(!ticketInfo) return res.status(404).json("Ticket Not Found")
+
+        
+        return res.status(200).json(ticketInfo)
+        
+    }catch(err){
+        console.log(err)
+        return res.status(500).json(err)
+
+    }
+
 }
+
 
 
 
@@ -129,8 +199,4 @@ bookingCltr.cancelBooking= async(req,res)=>{
 }
 
 
-module.exports = bookingCltr;
-
-
-
-
+module.exports = bookingCltr
