@@ -73,7 +73,7 @@ app.put("/api/profile/:profileId", upload.single("profilePic"),authenticateUser,
 //event ApiS
 app.post('/api/getAddress')
 // 
-app.post("/api/event",authenticateUser,authorizeUser(["Organiser"]),upload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
+app.post("/api/event",authenticateUser,upload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
 app.get("/api/event",eventCltr.getAll)
 app.get("/api/event/:eventId",eventCltr.getOne)
 app.put("/api/event/:eventId")
@@ -94,6 +94,8 @@ app.delete("/api/booking/:bookingId",authenticateUser,bookingCltr.cancelBooking)
 
 //Payment API s
 app.post("/api/booking/:bookingId/payment",authenticateUser,paymentCltr.paymentCheckoutSession)
+app.put("/api/booking/update-payment",authenticateUser,paymentCltr.updatedPayment)
+app.delete("/api/delete-payment/:paymentId",authenticateUser,paymentCltr.deletePayment)
 
 //Review the Event
 app.post("/api/review/:eventId",authenticateUser,authorizeUser(['Customer']),checkSchema(reviewSchema),reviewCltr.create)

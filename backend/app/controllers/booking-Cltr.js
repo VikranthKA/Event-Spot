@@ -21,31 +21,15 @@ bookingCltr.createBooking = async (req, res) => {
             ticketType: ticket.ticketName,  // Assuming _id is the reference to EventModel
             quantity: ticket.Quantity,
             ticketPrice:ticket.ticketPrice,
-            totalAmount: ticket.totalAmount, // Include totalAmount for each ticket
+            totalAmount:ticket.ticketPrice * ticket.Quantity , // Include totalAmount for each ticket
         }));
-        // const transformedTickets = await Promise.all(tickets.map(async (ticket) => {
-        //     const eventInfo = await EventModel.findOne({ 'ticketType.ticketId': ticket._id });
-        
-        //     // Find the matching ticket within the ticketType array
-        //     const matchingTicket = eventInfo ? eventInfo.ticketType.find(t => t.ticketId === ticket._id) : null;
-        
-        //     return {
-        //         ticketId: ticket._id,
-        //         ticketType: ticket.ticketName,
-        //         quantity: ticket.Quantity,
-        //         totalAmount: ticket.totalAmount,
-        //         ticketPrice: matchingTicket ? matchingTicket.price : null,
-        //     };
-        // }));
-        
-        
+        const totalAmount = transformedTickets.reduce((total, ticket) => total + (ticket.ticketPrice *ticket.Quantity), 0);
 
         // Check if there are enough available seats for the specified ticket types
         const availableSeats = transformedTickets.every(ticket => {
             const matchingTicket = event.ticketType.find(eventTicket => eventTicket.ticketName === ticket.ticketType);
         
             if (!matchingTicket) {
-                console.log(matchingTicket, "matc");
                 return false; // Ticket not found in the event.ticketType array
             }
         
@@ -58,19 +42,15 @@ bookingCltr.createBooking = async (req, res) => {
             return res.status(400).json({ error: 'Not enough available seats for the specified ticket types' });
         }
 
-        // Calculate the overall amount for the booking
-        const totalAmount = transformedTickets.reduce((total, ticket) => total + ticket.totalAmount, 0);
 
-        // Create a new booking instance with the event ID and transformed tickets
         const booking = new BookingModel({
             userId: req.user.id,
             eventId,
             tickets: transformedTickets,
-            amount: totalAmount,
-            status: null
+            totalAmount: totalAmount,
+            status:null
         });
 
-        // Save the booking to the database
 
         // Update the remaining tickets for each ticket type in the event
 // Update the remaining tickets for each ticket type in the event
@@ -97,7 +77,6 @@ const updatedTicketTypes = event.ticketType.map(eventTicket => {
             return res.status(err)
         }
         (await (await booking.save()).populate("userId")).populate("eventId")
-        const addBooking = await ProfileModel.findOneAndUpdate({userId:req.user.id},{$push:{bookings:booking._id}})
         
         return res.status(201).json(booking);
     } catch (err) {

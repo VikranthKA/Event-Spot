@@ -84,8 +84,10 @@ function totalCount(ticketArray) {
 
 function momentConvertion(date) {
     return moment(date).format("YYYY-MM-DD HH:mm:ss")
+}
 
-
+function convertToMiles(inMeters){
+    return radiusInRadians = inMeters / (6371 * 1000)
 }
 
 const eventCltr = {}
@@ -155,22 +157,22 @@ eventCltr.create = async (req, res) => {
         // await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { event: event._id } })
         await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
 
-          const populatedEvent = event.populate({
-            path: "organiserId", select: "_id username email"
-        }).populate({
-            path: "categoryId" ,select:"name"
-        })
-        .populate({
-            path: 'reviews',
-            populate: {
-                path: 'userId',
-                model: 'UserModel',
-                select: '_id username email'
-            }
-        })
+        //   const populatedEvent = event.populate({
+        //     path: "organiserId", select: "_id username email"
+        // }).populate({
+        //     path: "categoryId" ,select:"name"
+        // })
+        // .populate({
+        //     path: 'reviews',
+        //     populate: {
+        //         path: 'userId',
+        //         model: 'UserModel',
+        //         select: '_id username email'
+        //     }
+        // })
             
-        console.log(event,"goodmoring")
-        return res.json(populatedEvent)
+        // console.log(event,"goodmoring")
+        return res.json(event)
     } catch (e) {
         console.log(e)
         res.status(500).json(e)
@@ -183,7 +185,7 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
     console.log(userlat,userlon,radius)
     try {
 
-        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlon), parseInt(userlat)], radius / 3963.2] } } }).populate({
+        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlon), parseInt(userlat)], convertToMiles(radius) / 3963.2] } } }).populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"
@@ -197,7 +199,7 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
             }
         })
         if (radiusEvents.length === 0) {
-            return res.status(404).json("Events Not Found in this radius : ",radius)
+            return res.status(404).json({err:"Events Not Found in this radius"})
         }
         // const validEvents = radiusEvents.filter((event) => {
         //     return event.isApproved === true && new Date(event.eventStartDateTime) >= new Date()
