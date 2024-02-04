@@ -66,7 +66,7 @@ app.patch('/api/user/resetPassword/:token')
 //
 app.post("/api/profile",authenticateUser, upload.single("profilePic"),checkSchema(profileSchema), profileCltr.create)
 app.get("/api/profile",authenticateUser, profileCltr.getOne)
-app.put("/api/profile/:profileId", upload.single("profilePic"),authenticateUser, checkSchema(profileSchema),profileCltr.update)
+app.put("/api/profile/:profileId", upload.single("profilePic"),authenticateUser,profileCltr.update)
 
 //user cannot delete the profile but i have written the cltr
 
