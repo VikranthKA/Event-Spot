@@ -278,35 +278,50 @@ eventCltr.distanceAmongThem = async (req, res) => {
 
 
 
+const ITEMS_PER_PAGE = 6; // Set the number of items per page
+
 eventCltr.getAll = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+
     try {
+        const totalEvents = await EventModel.countDocuments();
+        const totalPages = Math.ceil(totalEvents / ITEMS_PER_PAGE);
 
-            const events = await EventModel.find(
-                ).populate({
-                    path: "organiserId", select: "_id username email"
-                }).populate({
-                    path: "categoryId" ,select:"name"
-                })
-                .populate({
-                    path: 'reviews',
-                    populate: {
-                        path: 'userId',
-                        model: 'UserModel',
-                        select: '_id username email'
-                    }
-                })
+        const events = await EventModel.find()
+            .populate({
+                path: "organiserId",
+                select: "_id username email"
+            })
+            .populate({
+                path: "categoryId",
+                select: "name"
+            })
+            .populate({
+                path: 'reviews',
+                populate: {
+                    path: 'userId',
+                    model: 'UserModel',
+                    select: '_id username email'
+                }
+            })
+            .skip((page - 1) * ITEMS_PER_PAGE)
+            .limit(ITEMS_PER_PAGE);
 
- 
-        if (!events || events.lenght === 0) {
-            res.status(404).json(events)
+        if (!events || events.length === 0) {
+            return res.status(404).json(events);
         }
-        res.status(200).json(events)
 
+        return res.status(200).json({
+            events,
+            totalPages,
+            currentPage: page
+        });
     } catch (err) {
-        console.log(err)
-        return res.status(400).json({err})
+        console.error(err);
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
-}
+};
+
 
 eventCltr.getOne = async (req, res) => {
 
@@ -320,6 +335,29 @@ eventCltr.getOne = async (req, res) => {
         return res.status(500).json({err})
     }
 }
+
+eventCltr.approveEvent = async (req, res) => {
+    try {
+      const eventId = req.params.eventId;
+  
+      // Update the isApproved field to true
+      const updatedEvent = await EventModel.findByIdAndUpdate(
+        eventId,
+        { isApproved: true },
+        { new: true } // to return the updated event
+      );
+  
+      if (!updatedEvent) {
+        return res.status(404).json({ message: 'Event not found' });
+      }
+  
+      res.status(200).json(updatedEvent);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  };
+
 
 eventCltr.getEvent = async (req, res) => {
     try {

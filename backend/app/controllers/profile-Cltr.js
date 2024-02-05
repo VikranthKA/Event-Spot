@@ -58,8 +58,10 @@ profileCltr.create = async (req, res) => {
   profileCltr.update = async (req, res) => {
     const error = validationResult(req)
     if(!error.isEmpty()){
+        console.log(error)
         return res.status(400).json(error)
     }
+    console.log(req.params.profileId)
     const body = _.pick(req.body,["description","address","lonlat","city"])
     try {
         const updatedProfile = {
@@ -78,7 +80,7 @@ profileCltr.create = async (req, res) => {
       if(req.file)  updatedProfile.profilePic
 
       
-      const profile = await ProfileModel.findOneAndUpdate({_id:req.params.profileId},{userId:req.params.id},updatedProfile,{new:true})
+      const profile = await ProfileModel.findOneAndUpdate({_id:req.params.profileId},{userId:req.user.id},updatedProfile,{new:true})
       const result = profile.populate("userId")
 
       return res.status(200).json(result) 
