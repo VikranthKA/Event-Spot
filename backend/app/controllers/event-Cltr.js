@@ -74,10 +74,7 @@ async function getAddressByGeoCode(data) {
 
 }
 
-const totalTicketCount = (ticketType) => {
 
-}
-// finding the total count of the ticket count
 function totalCount(ticketArray) {
     return ticketArray.reduce((total, ticket) => total + ticket.ticketCount, 0);
 }
@@ -99,14 +96,15 @@ eventCltr.create = async (req, res) => {
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() })
     }
+    console.log(req.body,"i am body")
     const body = _.pick(req.body,
         [
             "eventStartDateTime", 'title', 'description', "ClipName", "BrochureName", 'categoryId',
             "ticketType", "venueName", "addressInfo", "ticketSaleStartTime", "ticketSaleEndTime", "youTube", "location", "Actors"
         ])
     
-    console.log(req.body,"i am category")
-    console.log(body.categoryId,"hello")
+    
+ 
     const event = new EventModel(body)
     
     try {
@@ -143,7 +141,12 @@ eventCltr.create = async (req, res) => {
         }, {
             BrochureName: body.BrochureName,
             image: req.files.BrochureFile[0].filename
+  
         }]
+        console.log(body.BrochureName,"asdffffffffffasdfsdfsdfsfasdasdfsd")
+        console.log(event.posters[1].BrochureName,"Brochure")
+
+        
         event.location = {
             type: "Point",
             coordinates: [body.location.lon, body.location.lat]
@@ -157,27 +160,41 @@ eventCltr.create = async (req, res) => {
         // await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { event: event._id } })
         await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
 
-        //   const populatedEvent = event.populate({
-        //     path: "organiserId", select: "_id username email"
-        // }).populate({
-        //     path: "categoryId" ,select:"name"
-        // })
-        // .populate({
-        //     path: 'reviews',
-        //     populate: {
-        //         path: 'userId',
-        //         model: 'UserModel',
-        //         select: '_id username email'
-        //     }
-        // })
+        const populatedEvent = await EventModel.populate(event, [
+            { path: 'organiserId', select: '_id username email' },
+            { path: 'categoryId', select: 'name' },
+            {
+              path: 'reviews',
+              populate: {
+                path: 'userId',
+                model: 'UserModel',
+                select: '_id username email'
+              }
+            }
+          ])
             
-        // console.log(event,"goodmoring")
-        return res.json(event)
+        console.log(event,"goodmoring")
+        return res.json(populatedEvent)
     } catch (e) {
         console.log(e)
         res.status(500).json(e)
     }
 }
+
+function metersToMiles(meters) {
+    const data = meters * 0.000621371
+    return data
+}
+
+function metersToRadians(meters) {
+    // Earth's radius in meters
+    const earthRadius = 6371000; // approximately 6371 km
+  
+    // Conversion formula
+    const radians = meters / earthRadius;
+  
+    return radians;
+  }
 
 eventCltr.getRadiusValueEvent = async (req, res) => {
 
@@ -185,7 +202,7 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
     console.log(userlat,userlon,radius)
     try {
 
-        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlon), parseInt(userlat)], convertToMiles(radius) / 3963.2] } } }).populate({
+        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlon), parseInt(userlat)], metersToRadians(radiust)/369.3] } } }).populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"
@@ -198,6 +215,7 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
                 select: '_id username email'
             }
         })
+        console.log(radiusEvents)
         if (radiusEvents.length === 0) {
             return res.status(404).json({err:"Events Not Found in this radius"})
         }
@@ -217,7 +235,7 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
 
 
     } catch (err) {
-        return res.status(500).json({ error: console.log(err) })
+        return res.status(500).json({err})
 
     }
 }
@@ -227,7 +245,7 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
 eventCltr.distanceAmongThem = async (req, res) => {
 
 
-    const errors = validationResult(req);
+    const errors = validationResult(req)
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     } else {
@@ -279,33 +297,33 @@ const ITEMS_PER_PAGE = 3; // Set the number of items per page
 eventCltr.paginate = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
 
-    try {
-        const totalEvents = await EventModel.countDocuments();
-        const totalPages = Math.ceil(totalEvents / ITEMS_PER_PAGE);
+//     try {
+//         const totalEvents = await EventModel.countDocuments();
+//         const totalPages = Math.ceil(totalEvents / ITEMS_PER_PAGE);
 
-        const events = await EventModel.find()
-            .populate({
-                path: "organiserId",
-                select: "_id username email"
-            })
-            .populate({
-                path: "categoryId",
-                select: "name"
-            })
-            .populate({
-                path: 'reviews',
-                populate: {
-                    path: 'userId',
-                    model: 'UserModel',
-                    select: '_id username email'
-                }
-            })
-            .skip((page - 1) * ITEMS_PER_PAGE)
-            .limit(ITEMS_PER_PAGE);
+//         const events = await EventModel.find()
+//             .populate({
+//                 path: "organiserId",
+//                 select: "_id username email"
+//             })
+//             .populate({
+//                 path: "categoryId",
+//                 select: "name"
+//             })
+//             .populate({
+//                 path: 'reviews',
+//                 populate: {
+//                     path: 'userId',
+//                     model: 'UserModel',
+//                     select: '_id username email'
+//                 }
+//             })
+//             .skip((page - 1) * ITEMS_PER_PAGE)
+//             .limit(ITEMS_PER_PAGE);
 
-        if (!events || events.length === 0) {
-            return res.status(404).json(events);
-        }
+//         if (!events || events.length === 0) {
+//             return res.status(404).json(events);
+//         }
 
         return res.status(200).json({
             events,
@@ -352,17 +370,26 @@ eventCltr.getAll = async (req, res) => {
 };
 
 
+eventCltr.getAll=async(req,res)=>{
+    try{
+        const event = await EventModel.find()
+        return res.status(200).json(event)
+    }catch(err){
+        console.log(err)
+        res.json(err)
+    }
+}
 
 eventCltr.getOne = async (req, res) => {
 
     try {
         const event = await EventModel.findById({ _id: req.params.eventId })
-        if (!event) return res.status.json("Error getting the Event")
+        if (!event) return res.status.json({err:"Error getting the Event"})
         return res.status(200).json(event)
 
     } catch (err) {
         console.log(err)
-        return res.status(500).json(err)
+        return res.status(500).json({err})
     }
 }
 
@@ -443,7 +470,7 @@ eventCltr.update = async (req, res) => {
             "eventStartDateTime", 'title', 'description', "ClipName", "BrochureName", 'categoryId',
             "ticketType", "venueName", "addressInfo", "ticketSaleStartTime", "ticketSaleEndTime", "youTube", "location", "Actors"
         ])
-    const event = new EventModel(body)
+    const event = {}
     
     try {
         // if (event.ticketSaleStartTime >= event.eventStartDateTime) return res.status(400).json("Ticket live on must be greater than event start time")
@@ -494,12 +521,11 @@ eventCltr.update = async (req, res) => {
         }
         event.actors = body.Actors
 
+        const updatedEvent = await findOneAndUpdate({_id:req.params.eventId,organiserId:req.user.id},event,{new:true})
 
-        await event.save()
+        if(categoryId) await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
 
-        await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
-
-          const populatedEvent = event.populate({
+          const populatedEvent = updatedEvent.populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"
@@ -514,9 +540,9 @@ eventCltr.update = async (req, res) => {
         })
             
         return res.json(populatedEvent)
-    } catch (e) {
-        console.log(e)
-        res.status(500).json(e)
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({err})
     }
 }
 
@@ -529,8 +555,8 @@ eventCltr.removeEvent = async (req, res) => {
             return res.status(404).json(event)
         }
         return res.status(200).json(event)
-    } catch (e) {
-        return res.status(500).json(e)
+    } catch (err) {
+        return res.status(500).json({err})
     }
 }
 
@@ -541,7 +567,7 @@ eventCltr.getOneEvent = async (req, res) => {
         })
         res.status(200).json(event)
     } catch (err) {
-        res.status(500).json(e)
+        res.status(500).json({err})
     }
 }
 

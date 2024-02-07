@@ -25,9 +25,8 @@ const bookingSchema = new Schema({
 
     
     status: {
-        type:Schema.Types.ObjectId,
-        ref:"PaymentModel",
-        
+        type:Boolean,
+        default:false
     }
 
 })

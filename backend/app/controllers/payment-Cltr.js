@@ -1,3 +1,4 @@
+require("dotenv").config()
 const { validationResult } = require("express-validator");
 const BookingModel = require("../models/booking-model");
 const stripe = require("stripe")(process.env.STRIPE_KEY);
@@ -26,10 +27,11 @@ paymentCltr.paymentCheckoutSession = async (req, res) => {
         return res.status(404).json({ error: bookedEvent, message: "Cannot find the booked event" });
       }
 
-      const profile = await ProfileModel.findOne({userId:req.user.id}).populate("userId")
-
+      const profile = await ProfileModel.find({userId:req.user.id}).populate("userId")
+      // console.log(profile.userId.username)
       const customer = await stripe.customers.create({
-        name: profile.userId.username,
+        // name: profile.userId.username,
+        name:"Event_Spot",
         address: {
             line1: 'India',
             postal_code: '560002',
@@ -99,20 +101,22 @@ paymentCltr.updatedPayment = async(req,res)=>{
         console.log(payment,"paymentInfo")
     if(payment.status === true){
       console.log("2")
-      const booking = await BookingModel.findOneAndUpdate({_id:payment.bookingId,userId:req.user.id},{status:true})
-        console.log(booking)
-        //add booking is working 
-      const addBooking = await ProfileModel.findOneAndUpdate({userId:req.user.id},{$push:{bookings:booking._id}})
-      console.log(addBooking)
+      const booking = await BookingModel.findOneAndUpdate({_id:payment.bookingId},{status:true},)
+        console.log(booking._id,"id")
 
-    console.log("3")
+        const updatedProfile = await ProfileModel.findOneAndUpdate(
+          { userId: req.user.id },
+          { $push: { bookings: booking._id } }
+        ) 
+
 
       res.status(200).json("Payment Successfull", booking.totalAmount,"Rs")
     }
     if(!payment) return res.status(404).json("Cannot find the Payment Info")
 
   } catch(err){
-    return res.status(200).json("payment sucess")
+    console.log(err)
+    return res.status(500).json(err)
   }
 }
 

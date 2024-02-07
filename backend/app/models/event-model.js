@@ -18,7 +18,6 @@ const eventSchema = new Schema({
             type:String
         }
     },{
-    //poster for the images
 
 
         BrochureName:String,
