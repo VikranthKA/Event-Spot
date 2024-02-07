@@ -274,9 +274,9 @@ eventCltr.distanceAmongThem = async (req, res) => {
 
 
 
-const ITEMS_PER_PAGE = 6; // Set the number of items per page
+const ITEMS_PER_PAGE = 3; // Set the number of items per page
 
-eventCltr.getAll = async (req, res) => {
+eventCltr.paginate = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
 
     try {
@@ -318,6 +318,40 @@ eventCltr.getAll = async (req, res) => {
     }
 };
 
+eventCltr.getAll = async (req, res) => {
+    try {
+        const events = await EventModel.find()
+            .populate({
+                path: "organiserId",
+                select: "_id username email"
+            })
+            .populate({
+                path: "categoryId",
+                select: "name"
+            })
+            .populate({
+                path: 'reviews',
+                populate: {
+                    path: 'userId',
+                    model: 'UserModel',
+                    select: '_id username email'
+                }
+            });
+
+        if (!events || events.length === 0) {
+            return res.status(404).json(events);
+        }
+
+        return res.status(200).json({
+            events
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+
 
 eventCltr.getOne = async (req, res) => {
 
@@ -340,6 +374,28 @@ eventCltr.approveEvent = async (req, res) => {
       const updatedEvent = await EventModel.findByIdAndUpdate(
         eventId,
         { isApproved: true },
+        { new: true } // to return the updated event
+      );
+  
+      if (!updatedEvent) {
+        return res.status(404).json({ message: 'Event not found' });
+      }
+  
+      res.status(200).json(updatedEvent);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  };
+
+  eventCltr.cancelApprovalEvent = async (req, res) => {
+    try {
+      const eventId = req.params.eventId;
+  
+      // Update the isApproved field to false
+      const updatedEvent = await EventModel.findByIdAndUpdate(
+        eventId,
+        { isApproved: false },
         { new: true } // to return the updated event
       );
   

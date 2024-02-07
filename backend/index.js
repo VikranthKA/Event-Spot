@@ -74,9 +74,11 @@ app.put("/api/profile/:profileId", upload.single("profilePic"),authenticateUser,
 app.post('/api/getAddress')
 // 
 app.post("/api/event",authenticateUser,upload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
-app.get("/api/event",eventCltr.getAll)
+app.get("/api/paginate/event",eventCltr.paginate)
 app.get("/api/event/:eventId",eventCltr.getOne)
 app.put('/api/event/approve/:eventId', eventCltr.approveEvent);
+app.put('/api/event/cancel-approve/:eventId', eventCltr.cancelApprovalEvent);
+app.get('/api/event',eventCltr.getAll)
 
 app.put("/api/event/:eventId")
 app.delete("/api/event/:eventId")
