@@ -1,28 +1,26 @@
 const nodemailer = require("nodemailer")
 
-const sendEmail =async (options)=>{
+const funEmail =async (options)=>{
     //create a  transport
     const transport = nodemailer.createTransport({
-        host:process.env.EMAIL_HOST,
-        port:process.env.EMAIL_PORT,
+        service:'gmail',
         auth:{
-            user:process.env.EMAIL_PASSWORD,
-            pass:process.env.EMAIL_PASSWORD
-        },
-        authMethod:"LOGIN",
-        secure: false
+            user:process.env.EMAIL_USER,
+            pass:process.env.EMAIL_PASSWARD
 
+        }
 
     })
 
     const emailOptions = {
-        from:'Event-Spot support<support@event_spot.com>',
+        from:process.env.EMAIL_USER,
         to:options.email,
         subject:options.subject,
         text:options.message
 
 
     }
+
     try{
 
         await transport.sendMail(emailOptions)
@@ -31,10 +29,9 @@ const sendEmail =async (options)=>{
         console.log(err)
         
     }
-        // .then(res=>console.log(res))
-        // .catch(err=>console.log(err))
+
 
 
 }
 
-module.exports = sendEmail
+module.exports = funEmail

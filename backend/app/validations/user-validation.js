@@ -9,6 +9,15 @@ const passwordSchema = {
         errorMessage: "Password is required"
     }
 };
+const emailSchema = {
+        isEmail: {
+            errorMessage: "Email must be a valid format"
+        },
+        notEmpty: {
+            errorMessage: "Email cannot be empty"
+        }
+    
+}
 
 const userRegistration = {
     username: {
@@ -21,12 +30,7 @@ const userRegistration = {
         }
     },
     email: {
-        isEmail: {
-            errorMessage: "Email must be a valid format"
-        },
-        notEmpty: {
-            errorMessage: "Email cannot be empty"
-        },
+        ...emailSchema,
         custom: {
             options: async function(value) {
                 const email = await UserModel.findOne({ email: value });
@@ -64,14 +68,7 @@ const userRegistration = {
 };
 
 const userLogin = {
-    email: {
-        isEmail: {
-            errorMessage: "Email must be a valid format"
-        },
-        notEmpty: {
-            errorMessage: "Email cannot be empty"
-        }
-    },
+    email:emailSchema,
     password: passwordSchema
 };
 
@@ -79,11 +76,15 @@ const updatePassword = {
     newPassword:passwordSchema,
     changePassword:passwordSchema
 }
+const forgotPassword = {
+    email:emailSchema
+}
 
 module.exports = {
     userLoginSchema: userLogin,
     userRegSchema: userRegistration,
-    userUpdatePassword:updatePassword
+    userUpdatePassword:updatePassword,
+    userForgotPassword:forgotPassword
 };
 
 

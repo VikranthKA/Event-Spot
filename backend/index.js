@@ -48,11 +48,12 @@ const upload = multer({ storage: storage })
 
 
 
-const { userLoginSchema, userRegSchema, userUpdatePassword } = require("./app/validations/user-validation")
+const { userLoginSchema, userRegSchema, userUpdatePassword ,userForgotPassword} = require("./app/validations/user-validation")
 const categoryValidationSchema = require("./app/validations/category-validation")
 const { profileSchema } = require("./app/validations/profile-validation")
 const {reviewSchema} = require("./app/validations/review-validation")
 const {validatedRequest,validateFiles} = require("./app/validations/event-validation");
+const userCltr = require("./app/controllers/user-cltr");
 
 //user APIs
 app.post("/api/user/register", checkSchema(userRegSchema), usercltr.register)
@@ -60,7 +61,13 @@ app.post("/api/user/login", checkSchema(userLoginSchema), usercltr.login)
 app.put("/api/user/updatepassword", authenticateUser, usercltr.updatePassword)
 app.get("/api/users", authenticateUser, authorizeUser(["Admin"]), usercltr.getAll)
 app.patch('/api/user/resetPassword/:token')
+
 //Deactivate the user cltr 
+
+
+//Forgot password
+app.post("/api/user/forgot-password",checkSchema(userForgotPassword),usercltr.forgotPassword)
+app.post("/api/reset-password/:id/:token",usercltr.resetPassword)
 
 // Profiles Info APIs
 //

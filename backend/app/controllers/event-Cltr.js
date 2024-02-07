@@ -74,9 +74,7 @@ async function getAddressByGeoCode(data) {
 
 }
 
-const totalTicketCount = (ticketType) => {
 
-}
 function totalCount(ticketArray) {
     return ticketArray.reduce((total, ticket) => total + ticket.ticketCount, 0);
 }
@@ -183,13 +181,28 @@ eventCltr.create = async (req, res) => {
     }
 }
 
+function metersToMiles(meters) {
+    const data = meters * 0.000621371
+    return data
+}
+
+function metersToRadians(meters) {
+    // Earth's radius in meters
+    const earthRadius = 6371000; // approximately 6371 km
+  
+    // Conversion formula
+    const radians = meters / earthRadius;
+  
+    return radians;
+  }
+
 eventCltr.getRadiusValueEvent = async (req, res) => {
 
     const { userlat, userlon, radius } = await req.params 
     console.log(userlat,userlon,radius)
     try {
 
-        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlon), parseInt(userlat)], convertToMiles(radius) / 3963.2] } } }).populate({
+        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlon), parseInt(userlat)], metersToRadians(radiust)/369.3] } } }).populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"
@@ -202,6 +215,7 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
                 select: '_id username email'
             }
         })
+        console.log(radiusEvents)
         if (radiusEvents.length === 0) {
             return res.status(404).json({err:"Events Not Found in this radius"})
         }
@@ -280,48 +294,57 @@ eventCltr.distanceAmongThem = async (req, res) => {
 
 const ITEMS_PER_PAGE = 6; // Set the number of items per page
 
-eventCltr.getAll = async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
+// eventCltr.getAll = async (req, res) => {
+//     const page = parseInt(req.query.page) || 1;
 
-    try {
-        const totalEvents = await EventModel.countDocuments();
-        const totalPages = Math.ceil(totalEvents / ITEMS_PER_PAGE);
+//     try {
+//         const totalEvents = await EventModel.countDocuments();
+//         const totalPages = Math.ceil(totalEvents / ITEMS_PER_PAGE);
 
-        const events = await EventModel.find()
-            .populate({
-                path: "organiserId",
-                select: "_id username email"
-            })
-            .populate({
-                path: "categoryId",
-                select: "name"
-            })
-            .populate({
-                path: 'reviews',
-                populate: {
-                    path: 'userId',
-                    model: 'UserModel',
-                    select: '_id username email'
-                }
-            })
-            .skip((page - 1) * ITEMS_PER_PAGE)
-            .limit(ITEMS_PER_PAGE);
+//         const events = await EventModel.find()
+//             .populate({
+//                 path: "organiserId",
+//                 select: "_id username email"
+//             })
+//             .populate({
+//                 path: "categoryId",
+//                 select: "name"
+//             })
+//             .populate({
+//                 path: 'reviews',
+//                 populate: {
+//                     path: 'userId',
+//                     model: 'UserModel',
+//                     select: '_id username email'
+//                 }
+//             })
+//             .skip((page - 1) * ITEMS_PER_PAGE)
+//             .limit(ITEMS_PER_PAGE);
 
-        if (!events || events.length === 0) {
-            return res.status(404).json(events);
-        }
+//         if (!events || events.length === 0) {
+//             return res.status(404).json(events);
+//         }
 
-        return res.status(200).json({
-            events,
-            totalPages,
-            currentPage: page
-        });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Internal Server Error' });
+//         return res.status(200).json({
+//             events,
+//             totalPages,
+//             currentPage: page
+//         });
+//     } catch (err) {
+//         console.error(err);
+//         return res.status(500).json({ error: 'Internal Server Error' });
+//     }
+// };
+
+eventCltr.getAll=async(req,res)=>{
+    try{
+        const event = await EventModel.find()
+        return res.status(200).json(event)
+    }catch(err){
+        console.log(err)
+        res.json(err)
     }
-};
-
+}
 
 eventCltr.getOne = async (req, res) => {
 

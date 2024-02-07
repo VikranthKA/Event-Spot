@@ -3,7 +3,7 @@ const UserModel = require("../models/user-model")
 const _ = require("lodash")
 const bcryptjs = require("bcryptjs")
 const jwt = require("jsonwebtoken")
-const email = require("../utils/NodeMailer/email")
+const funEmail = require("../utils/NodeMailer/email")
 
 const userCltr = {}
 
@@ -53,7 +53,7 @@ userCltr.login = async (req, res) => {
       if (!result) {
         return res.status(400).json("invalid email/password")
       }
-      await email({
+      await funEmail({
         email: user.email,
         subject: "LOGIN STATUS",
         message: "YOU'R LOGIN IS SUCCESSFULLY"
@@ -140,14 +140,16 @@ userCltr.forgotPassword = async (req, res) => {
     const user = await UserModel.findOne({ email: email })
     if (!user) res.status(404).json({ err: "Email not found" })
 
-    const genToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
+    const genToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "10min"
     })
-    await email({
+    emailData = {
       email: user.email,
       subject: "EVENT_SPOT@<support> Password Change",
-      message: `Click here to reset your password :http://${process.env.JWT_SECRET_KEY}/resetPassword/${user._id}/${token}`
-    })
+      message: `Click here to reset your password ${process.env.SERVER_URL}/resetPassword/${user._id}/${genToken}`
+
+    }
+    await funEmail(emailData)
     //send the token back to the user email
     //   const resetUrl = `${req.protocol}://${req.get(process.env.SERVER_URL)}/api/v1/users/resetPassword/${resetToken}`
     //  const message = `below link to reset ${resetUrl}`
@@ -163,10 +165,11 @@ userCltr.forgotPassword = async (req, res) => {
 
 userCltr.resetPassword = async (req, res) => {
   const { password } = req.body
+
   const { id, token } = req.params
 
   try {
-    const decrypt = jwt.verify(token, process.env.JWT_SECRET_KEY)
+    const decrypt = jwt.verify(token, process.env.JWT_SECRET)
 
     const salt = await bcryptjs.genSalt()
     const encryptedPwd = await bcryptjs.hash(password, salt)
@@ -174,6 +177,7 @@ userCltr.resetPassword = async (req, res) => {
     await UserModel.findByIdAndUpdate(id, { password: encryptedPwd })
     return res.status(200).json({ msg: "Successfully changed the password" })
   } catch (err) {
+    console.log(err)
     if (err.name === "TokenExpriedError") {
       return res.status(401).json({ status: 'error', msg: "Token has expried" })
     }
