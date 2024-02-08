@@ -28,23 +28,25 @@ const { authenticateUser, authorizeUser } = require("./app/middleware/auth")
 const { decodeAddress, decodeLatLng } = require("./app/utils/decodeAddress")
 
 //setting up the multer middleware
-const multer = require('multer')
+// const multer = require('multer')
 
-const path = require("path")
+// const path = require("path")
 
-const storage = multer.diskStorage({
-    destination:(req,file,cb)=>{
-        cb(null,'uploads/images')
-    },
-    filename:(req,file,cb)=>{
-        const uniqueDateName = `${Date.now() }__${file.originalname}`
-        cb(null,uniqueDateName)
-    }   
-})
+// const storage = multer.diskStorage({
+//     destination:(req,file,cb)=>{
+//         cb(null,'uploads/images')
+//     },
+//     filename:(req,file,cb)=>{
+//         const uniqueDateName = `${Date.now() }__${file.originalname}`
+//         cb(null,uniqueDateName)
+//     }   
+// })
 
-const staticpath = path.join(__dirname,"/uploads")
-app.use("/uploads", express.static(staticpath))
-const upload = multer({ storage: storage })
+// const staticpath = path.join(__dirname,"/uploads")
+// app.use("/uploads", express.static(staticpath))
+// const upload = multer({ storage: storage })
+
+const {eventUpload,profileUpload} = require("./app/utils/S3/file-hanlding")
 
 
 
@@ -71,23 +73,24 @@ app.post("/api/reset-password/:id/:token",usercltr.resetPassword)
 
 // Profiles Info APIs
 //
-app.post("/api/profile",authenticateUser, upload.single("profilePic"),checkSchema(profileSchema), profileCltr.create)
+app.post("/api/profile",authenticateUser, profileUpload.single("profilePic"),checkSchema(profileSchema), profileCltr.create)
 app.get("/api/profile",authenticateUser, profileCltr.getOne)
-app.put("/api/profile/:profileId", upload.single("profilePic"),authenticateUser,profileCltr.update)
+app.put("/api/profile/:profileId", profileUpload.single("profilePic"),authenticateUser,profileCltr.update)
 
 //user cannot delete the profile but i have written the cltr
 
 //event ApiS
 app.post('/api/getAddress')
 // 
-app.post("/api/event",authenticateUser,upload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
+app.post("/api/event",authenticateUser,eventUpload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
 app.get("/api/paginate/event",eventCltr.paginate)
+app.put("/api/event/:eventId",authenticateUser,eventUpload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.update)
+
 app.get("/api/event/:eventId",eventCltr.getOne)
 app.put('/api/event/approve/:eventId', eventCltr.approveEvent);
-app.put('/api/event/cancel-approve/:eventId', eventCltr.cancelApprovalEvent);
+app.put('/api/event/cancel-approve/:eventId', eventCltr.cancelApprovalEvent)
 app.get('/api/event',eventCltr.getAll)
 
-app.put("/api/event/:eventId")
 app.delete("/api/event/:eventId")
 
 //get all the events based on the radius

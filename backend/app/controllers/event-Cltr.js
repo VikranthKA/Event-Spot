@@ -187,11 +187,9 @@ function metersToMiles(meters) {
 }
 
 function metersToRadians(meters) {
-    // Earth's radius in meters
-    const earthRadius = 6371000; // approximately 6371 km
+    const earthRadius = 6371000
   
-    // Conversion formula
-    const radians = meters / earthRadius;
+    const radians = meters / earthRadius
   
     return radians;
   }
@@ -202,7 +200,7 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
     console.log(userlat,userlon,radius)
     try {
 
-        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlon), parseInt(userlat)], metersToRadians(radiust)/369.3] } } }).populate({
+        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlat), parseInt(userlon)], radius/6378.1] } } }).populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"
@@ -215,7 +213,7 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
                 select: '_id username email'
             }
         })
-        console.log(radiusEvents)
+        console.log(radiusEvents,"found")
         if (radiusEvents.length === 0) {
             return res.status(404).json({err:"Events Not Found in this radius"})
         }
@@ -297,33 +295,33 @@ const ITEMS_PER_PAGE = 3; // Set the number of items per page
 eventCltr.paginate = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
 
-//     try {
-//         const totalEvents = await EventModel.countDocuments();
-//         const totalPages = Math.ceil(totalEvents / ITEMS_PER_PAGE);
+    try {
+        const totalEvents = await EventModel.countDocuments();
+        const totalPages = Math.ceil(totalEvents / ITEMS_PER_PAGE);
 
-//         const events = await EventModel.find()
-//             .populate({
-//                 path: "organiserId",
-//                 select: "_id username email"
-//             })
-//             .populate({
-//                 path: "categoryId",
-//                 select: "name"
-//             })
-//             .populate({
-//                 path: 'reviews',
-//                 populate: {
-//                     path: 'userId',
-//                     model: 'UserModel',
-//                     select: '_id username email'
-//                 }
-//             })
-//             .skip((page - 1) * ITEMS_PER_PAGE)
-//             .limit(ITEMS_PER_PAGE);
+        const events = await EventModel.find()
+            .populate({
+                path: "organiserId",
+                select: "_id username email"
+            })
+            .populate({
+                path: "categoryId",
+                select: "name"
+            })
+            .populate({
+                path: 'reviews',
+                populate: {
+                    path: 'userId',
+                    model: 'UserModel',
+                    select: '_id username email'
+                }
+            })
+            .skip((page - 1) * ITEMS_PER_PAGE)
+            .limit(ITEMS_PER_PAGE);
 
-//         if (!events || events.length === 0) {
-//             return res.status(404).json(events);
-//         }
+        if (!events || events.length === 0) {
+            return res.status(404).json(events);
+        }
 
         return res.status(200).json({
             events,
@@ -359,6 +357,7 @@ eventCltr.getAll = async (req, res) => {
         if (!events || events.length === 0) {
             return res.status(404).json(events);
         }
+        console.log(events)
 
         return res.status(200).json({
             events

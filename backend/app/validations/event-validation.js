@@ -1,7 +1,9 @@
 const Joi = require('joi')
 
+
+
 const schema = Joi.object({
-  eventStartDateTime: Joi.date().iso().required(),
+  eventStartDateTime: Joi.date().greater(Joi.ref('ticketSaleStartTime')).required(),
   title: Joi.string().required(),
   description: Joi.string().required(),
   venueName: Joi.string().required(),
@@ -25,7 +27,8 @@ const schema = Joi.object({
   BrochureName: Joi.string().required(),
   youTube: Joi.object({
     title: Joi.string().required(),
-    url: Joi.string().required()
+    url:  Joi.string().required()   
+    // .uri().
   }).required(),
   addressInfo: Joi.object({
     address: Joi.string().required(),
@@ -34,8 +37,11 @@ const schema = Joi.object({
   location: Joi.object({
     lon: Joi.number().required(),
     lat: Joi.number().required()
-  }).required()
+  }).required(),
+
 });
+
+
 
 const validatedRequest = (req,res,next)=>{
    
