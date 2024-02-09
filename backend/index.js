@@ -60,6 +60,7 @@ app.post("/api/user/register", checkSchema(userRegSchema), usercltr.register)
 app.post("/api/user/login", checkSchema(userLoginSchema), usercltr.login)
 app.put("/api/user/updatepassword", authenticateUser, usercltr.updatePassword)
 app.get("/api/users", authenticateUser, authorizeUser(["Admin"]), usercltr.getAll)
+app.put("/api/users/:userId", authenticateUser, authorizeUser(["Admin"]), usercltr.deactivate)
 app.patch('/api/user/resetPassword/:token')
 
 //Deactivate the user cltr 
@@ -73,7 +74,7 @@ app.post("/api/reset-password/:id/:token",usercltr.resetPassword)
 //
 app.post("/api/profile",authenticateUser, upload.single("profilePic"),checkSchema(profileSchema), profileCltr.create)
 app.get("/api/profile",authenticateUser, profileCltr.getOne)
-app.put("/api/profile/:profileId", upload.single("profilePic"),authenticateUser,profileCltr.update)
+app.put("/api/profile/", upload.single("profilePic"),authenticateUser,profileCltr.update)
 
 //user cannot delete the profile but i have written the cltr
 

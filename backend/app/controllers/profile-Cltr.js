@@ -56,39 +56,52 @@ profileCltr.create = async (req, res) => {
 
 
   profileCltr.update = async (req, res) => {
-    const error = validationResult(req)
-    if(!error.isEmpty()){
-        console.log(error)
-        return res.status(400).json(error)
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        console.log(errors);
+        return res.status(400).json(errors);
     }
-    console.log(req.params.profileId)
-    const body = _.pick(req.body,["description","address","lonlat","city"])
+
+    const { profileId } = req.params;
+    const body = _.pick(req.body, ["description", "address", "lonlat", "city"]);
+
     try {
         const updatedProfile = {
-        userId:req.user.id,
-        description: body.description && body.description,
-        addressInfo: {
-            address:body.address && body.address,
-            city:body.city && body.city
-        },
-        location : {
-            type: "Point",
+            userId: req.user.id,
+            description: body.description || '',
+            addressInfo: {
+                address: body.address || '',
+                city: body.city || ''
+            },
+            location: {
+                type: "Point",
+                coordinates: [body?.lonlat?.lon || 0, body?.lonlat?.lat || 0]
+            }
+        };
 
-            coordinates: [body?.lonlat?.lon ,  body?.lonlat?.lat]
-        },
-      }
-      if(req.file)  updatedProfile.profilePic
+        if (req.file) {
+            updatedProfile.profilePic = req.file.filename;
+        }
 
-      
-      const profile = await ProfileModel.findOneAndUpdate({_id:req.params.profileId},{userId:req.user.id},updatedProfile,{new:true})
-      const result = profile.populate("userId")
+        const profile = await ProfileModel.findOneAndUpdate(
+            { userId: req.user.id },
+            updatedProfile,
+            { new: true }
+        );
 
-      return res.status(200).json(result) 
+        if (!profile) {
+            return res.status(404).json({ error: 'Profile not found' });
+        }
+
+        const result = await profile.populate("userId")
+
+        return res.status(200).json(result);
     } catch (error) {
-      console.error('Error creating profile:', error)
-      return res.status(500).json(error);
+        console.error('Error updating profile:', error);
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
-  }
+};
+
 
 
 profileCltr.getAll=async(req,res)=>{
@@ -105,7 +118,7 @@ profileCltr.getOne = async (req, res) => {
 
     try {
         // Find the profile by profileId and ensure it belongs to the authenticated user
-        const profile = await ProfileModel.findOne({ userId: req.user.id} ).populate("userId");
+        const profile = await ProfileModel.findOne({ userId: req.user.id} ).populate("userId").populate("bookings");
         
         if (!profile) {
             // If profile is not found or doesn't belong to the authenticated user
