@@ -138,23 +138,20 @@ userCltr.forgotPassword = async (req, res) => {
   try {
 
     const user = await UserModel.findOne({ email: email })
-    if (!user) res.status(404).json({ err: "Email not found" })
+    if (!user) return res.status(404).json({ err: "Email not found" })
 
     const genToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "10min"
     })
     emailData = {
       email: user.email,
-      subject: "EVENT_SPOT@<support> Password Change",
+      subject: "EVENT_SPOT@ <support> Password Change",
       message: `Click here to reset your password ${process.env.SERVER_URL}/resetPassword/${user._id}/${genToken}`
 
     }
     await funEmail(emailData)
-    //send the token back to the user email
-    //   const resetUrl = `${req.protocol}://${req.get(process.env.SERVER_URL)}/api/v1/users/resetPassword/${resetToken}`
-    //  const message = `below link to reset ${resetUrl}`
-
-    res.status(200).json({ status: "sucess", msg: "sent success " })
+ 
+    res.status(200).json({ status: "success", msg: "sent success " })
   } catch (err) {
     console.log(err)
     return res.status(500).json(err)
@@ -181,7 +178,7 @@ userCltr.resetPassword = async (req, res) => {
     if (err.name === "TokenExpriedError") {
       return res.status(401).json({ status: 'error', msg: "Token has expried" })
     }
-    return res.status(500).json({ status: 'error', msg: err })
+    return res.status(500).json(err)
   }
 }
 

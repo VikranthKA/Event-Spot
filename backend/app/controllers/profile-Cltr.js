@@ -122,10 +122,12 @@ profileCltr.getOne = async (req, res) => {
         
         if (!profile) {
             // If profile is not found or doesn't belong to the authenticated user
-            return res.status(404).json({ error: "Profile not found or unauthorized access" });
+            return res.status(404).json({ error: "Profile not found " });
         } 
-    
-        // Successfully found and populated the profile
+        // const event = await EventModel.findById({_id:profile.eventId})
+        
+
+
         return res.status(200).json(profile);
     } catch (err) {
         console.error(err);
