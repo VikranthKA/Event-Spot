@@ -294,10 +294,6 @@ const ITEMS_PER_PAGE = 6; // Set the number of items per page
 
 eventCltr.paginate = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
-
-    try {
-        const totalEvents = await EventModel.countDocuments();
-        const totalPages = Math.ceil(totalEvents / ITEMS_PER_PAGE);
     try {
         const totalEvents = await EventModel.countDocuments();
         const totalPages = Math.ceil(totalEvents / ITEMS_PER_PAGE);

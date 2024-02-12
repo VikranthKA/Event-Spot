@@ -115,19 +115,16 @@ profileCltr.getAll=async(req,res)=>{
 }
 
 profileCltr.getOne = async (req, res) => {
-
     try {
         // Find the profile by profileId and ensure it belongs to the authenticated user
-        const profile = await ProfileModel.findOne({ userId: req.user.id} ).populate("userId").populate("bookings");
+        const profile = await ProfileModel.findOne({ userId: req.user.id }).populate("userId").populate("bookings");
         
         if (!profile) {
             // If profile is not found or doesn't belong to the authenticated user
-            return res.status(404).json({ error: "Profile not found " });
+            return res.status(404).json({ error: "Profile not found" });
         } 
-        // const event = await EventModel.findById({_id:profile.eventId})
-        
 
-
+        // Return the profile data
         return res.status(200).json(profile);
     } catch (err) {
         console.error(err);
@@ -135,7 +132,8 @@ profileCltr.getOne = async (req, res) => {
         // Handle unexpected errors
         return res.status(500).json({ error: "Internal Server Error" });
     }
-}
+};
+
     
 // The user cannot delete his profile but admin can or not
 profileCltr.delete=async(req,res)=>{
