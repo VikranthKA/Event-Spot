@@ -1,7 +1,9 @@
 const { validationResult } = require("express-validator");
 const BookingModel = require("../models/booking-model");
 const EventModel = require("../models/event-model");
-const ProfileModel = require("../models/profile-model");
+const ProfileModel = require("../models/profile-model")
+const moment=require("moment")
+const cron = require("node-cron")
 
 const bookingCltr = {};
 
@@ -11,6 +13,8 @@ bookingCltr.createBooking = async (req, res) => {
 
     try {
         console.log(eventId,"eventId")
+        const profile = await ProfileModel.findOne({userId : req.user.id})
+        if(!profile) await new ProfileModel().save()
         const event = await EventModel.findById({_id:eventId})
         if (!event) {
             return res.status(404).json({ error: 'Cannot find the Event' });
@@ -50,7 +54,6 @@ bookingCltr.createBooking = async (req, res) => {
             eventId,
             tickets: transformedTickets,
             totalAmount: totalAmount,
-            status: null
         });
 
         const updatedTicketTypes = event.ticketType.map(eventTicket => {
@@ -133,11 +136,68 @@ bookingCltr.TicketsInfo = async (req, res) => {
 
 }
 
+bookingCltr.getAllBookings = async(req,res)=>{
+    try{
+        const bookings = []
+        const foundbookings = await BookingModel.findOne({userId:req.user.id,status:false}).populate({path:"eventId",select:"_id title eventStartDateTime"})
+        if(Object.keys(foundbookings).length<0) return res.json("Every thing is Booked status true")
+        bookings.push(foundbookings)
+        const today = moment().startOf('day')//dis is the today date
+        const filterBookings = bookings.filter(booking =>{
+            const eventStartDateTime = moment(booking.eventId.eventStartDateTime)
+            return eventStartDateTime.isAfter(today)
+        })
+        return res.status(200).json(filterBookings)
+    }catch(err){
+        console.log(err)
+        return res.status(200).json(err)
+    }
+}
+
+
+async function cancelBookingFunction(eventId){
+    try{
+        const event = await EventModel.findById(eventId)
+        const updatedTicketTypes = event.ticketType.map(eventTicket=>{
+            const matchingTicket = booking.tickets.find(ticket=>ticket.ticketType === eventTicket.ticketName)
+            if(matchingTicket){
+                eventTicket.remainingTickets += matchingTicket
+            }
+            return eventTicket
+        })
+    
+        const updatedEvent = await EventModel.findByIdAndUpdate(eventId,{
+            ticketType : updatedTicketTypes
+        },{new:true})
+    
+        return updatedEvent
+
+    }catch(err){
+        console.log(err)
+        res.status(500).json(err)
+    }
+}
+
+// cron.schedule('* * * * *',async()=>{
+//     try{
+//         const bookingToCancel = await BookingModel.find({status:false})
+
+//         bookingToCancel.forEach(async booking=>{
+//             await cancelBookingFunction(booking._id)
+//         })
+//     }catch(err){
+//         console.log("Error in the cancel booking in cron",err)
+//     }
+// })
+cron.schedule("0 0 * * *",()=>{
+    //send the msg to the user of the booked event in the email
+})
 ///write a logic in the FE and show Timer of the 5 min if the times exists more then, call canelPayment and also add button to the says cancel payment
 bookingCltr.cancelBooking = async (req, res) => {
     const { bookingId } = req.params //send the form front end 
     try {
         const booking = await BookingModel.findOne({ _id: bookingId, userId: req.user.id })
+            
         //check the if the payment is create for this user and ticket if that sucess then say payment done
 
 

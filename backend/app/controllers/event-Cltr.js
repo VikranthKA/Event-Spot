@@ -8,6 +8,7 @@ const _ = require('lodash')
 const jwt = require("jsonwebtoken")
 const CategoryModel = require("../models/category-model")
 const ProfileModel = require("../models/profile-model")
+const { pipeline } = require("nodemailer/lib/xoauth2")
 
 
 
@@ -97,6 +98,7 @@ eventCltr.create = async (req, res) => {
         return res.status(400).json({ errors: errors.array() })
     }
     console.log(req.body,"i am body")
+    console.log(req.files)
     const body = _.pick(req.body,
         [
             "eventStartDateTime", 'title', 'description', "ClipName", "BrochureName", 'categoryId',
@@ -137,14 +139,12 @@ eventCltr.create = async (req, res) => {
 
         event.posters = [{
             ClipName: body.ClipName,
-            image: req.files.ClipFile[0].filename
+            image: req.files.ClipFile[0].key
         }, {
             BrochureName: body.BrochureName,
-            image: req.files.BrochureFile[0].filename
+            image: req.files.BrochureFile[0].key
   
         }]
-        console.log(body.BrochureName,"asdffffffffffasdfsdfsdfsfasdasdfsd")
-        console.log(event.posters[1].BrochureName,"Brochure")
 
         
         event.location = {
@@ -186,10 +186,10 @@ function metersToMiles(meters) {
     return data
 }
 
-function metersToRadians(meters) {
-    const earthRadius = 6371000
+function kmToRadians(km) {
+    const earthRadius = 6371
   
-    const radians = meters / earthRadius
+    const radians = km / earthRadius
   
     return radians;
   }
@@ -198,9 +198,10 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
 
     const { userlat, userlon, radius } = await req.params 
     console.log(userlat,userlon,radius)
+    console.log(kmToRadians(radius),"final")
     try {
 
-        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseInt(userlat), parseInt(userlon)], radius/6378.1] } } }).populate({
+        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseFloat(userlon),parseFloat(userlat) ],kmToRadians(radius) ] } } }).populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"
@@ -213,10 +214,11 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
                 select: '_id username email'
             }
         })
-        console.log(radiusEvents,"found")
-        if (radiusEvents.length === 0) {
-            return res.status(404).json({err:"Events Not Found in this radius"})
-        }
+
+        // if (radiusEvents.length === 0) {
+        //     return res.status(404).json({err:"Events Not Found in this radius"})
+        // }
+
         // const validEvents = radiusEvents.filter((event) => {
         //     return event.isApproved === true && new Date(event.eventStartDateTime) >= new Date()
         // })
@@ -227,9 +229,8 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
         //     return res.status(404).json(validEvents)
         // }
         // return res.status(200).json(validEvents)
-        return res.json(radiusEvents)
-
-
+        console.log(radiusEvents.length)
+        res.json(radiusEvents)
 
 
     } catch (err) {
@@ -298,9 +299,6 @@ eventCltr.paginate = async (req, res) => {
     try {
         const totalEvents = await EventModel.countDocuments();
         const totalPages = Math.ceil(totalEvents / ITEMS_PER_PAGE);
-    try {
-        const totalEvents = await EventModel.countDocuments();
-        const totalPages = Math.ceil(totalEvents / ITEMS_PER_PAGE);
 
         const events = await EventModel.find({isApproved: false})
             .populate({
@@ -314,9 +312,9 @@ eventCltr.paginate = async (req, res) => {
             .skip((page - 1) * ITEMS_PER_PAGE)
             .limit(ITEMS_PER_PAGE);
 
-        // if (!events || events.length === 0) {
-        //     return res.status(404).json({ error: 'No events found' });
-        // }
+        if (!events || events.length === 0) {
+            return res.status(404).json({ error: 'No events found' });
+        }
 
         return res.status(200).json({
             events,
@@ -328,6 +326,9 @@ eventCltr.paginate = async (req, res) => {
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 }
+
+
+
 
 
 
@@ -457,6 +458,8 @@ eventCltr.getEvent = async (req, res) => {
 
 
 eventCltr.update = async (req, res) => {
+    console.log(req.body)
+    return res.json(req.body)
 
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
@@ -518,11 +521,7 @@ eventCltr.update = async (req, res) => {
         }
         event.actors = body.Actors
 
-        const updatedEvent = await findOneAndUpdate({_id:req.params.eventId,organiserId:req.user.id},event,{new:true})
-
-        if(categoryId) await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
-
-          const populatedEvent = updatedEvent.populate({
+        const updatedEvent = await findOneAndUpdate({_id:req.params.eventId,organiserId:req.user.id},event,{new:true}).populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"
@@ -535,8 +534,11 @@ eventCltr.update = async (req, res) => {
                 select: '_id username email'
             }
         })
+
+        if(categoryId) await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
+
             
-        return res.json(populatedEvent)
+        return res.json(updatedEvent)
     } catch (err) {
         console.log(err)
         res.status(500).json({err})
@@ -565,6 +567,38 @@ eventCltr.getOneEvent = async (req, res) => {
         res.status(200).json(event)
     } catch (err) {
         res.status(500).json({err})
+    }
+}
+
+eventCltr.mostPopularEvent = async(req,res)=>{
+    const pipeline = [
+        {
+            $unwind: "$ticketType" 
+        },
+        {
+            $project: {
+                _id: 1,
+                title: 1,
+                ticketsSold: {
+                    $subtract: ["$ticketType.ticketCount", "$ticketType.remainingTickets"]
+                }
+            }
+        },
+        {
+            $sort: { ticketsSold: -1 }
+        },
+        {
+            $limit: 10
+        }
+    ]
+    try{
+        
+        const mostBookedEvents = await EventModel.aggregate(pipeline)
+        return res.status(200).json(mostBookedEvents)
+
+    }catch(err){
+        console.log(err)
+        return res.status(200).json(err)
     }
 }
 

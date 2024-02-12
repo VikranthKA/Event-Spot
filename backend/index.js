@@ -22,7 +22,7 @@ const categoryCltr = require("./app/controllers/category-Cltr")
 const profileCltr = require("./app/controllers/profile-Cltr")
 const bookingCltr = require("./app/controllers/booking-Cltr")
 const paymentCltr = require("./app/controllers/payment-Cltr")
-const reviewCltr = require("./app/controllers/review-Cltr")
+const adminCltr = require("./app/controllers/admin-Cltr")
 
 const { authenticateUser, authorizeUser } = require("./app/middleware/auth")
 const { decodeAddress, decodeLatLng } = require("./app/utils/decodeAddress")
@@ -54,8 +54,7 @@ const { userLoginSchema, userRegSchema, userUpdatePassword ,userForgotPassword} 
 const categoryValidationSchema = require("./app/validations/category-validation")
 const { profileSchema } = require("./app/validations/profile-validation")
 const {reviewSchema} = require("./app/validations/review-validation")
-const {validatedRequest,validateFiles} = require("./app/validations/event-validation");
-const userCltr = require("./app/controllers/user-cltr");
+const {validatedRequest,validateFiles,validatedEditRequest} = require("./app/validations/event-validation");
 
 //user APIs
 app.post("/api/user/register", checkSchema(userRegSchema), usercltr.register)
@@ -63,7 +62,6 @@ app.post("/api/user/login", checkSchema(userLoginSchema), usercltr.login)
 app.put("/api/user/updatepassword", authenticateUser, usercltr.updatePassword)
 app.get("/api/users", authenticateUser, authorizeUser(["Admin"]), usercltr.getAll)
 app.put("/api/users/:userId", authenticateUser, authorizeUser(["Admin"]), usercltr.deactivate)
-app.patch('/api/user/resetPassword/:token')
 
 //Deactivate the user cltr 
 
@@ -73,7 +71,6 @@ app.post("/api/user/forgot-password",checkSchema(userForgotPassword),usercltr.fo
 app.post("/api/reset-password/:id/:token",usercltr.resetPassword)
 
 // Profiles Info APIs
-//
 app.post("/api/profile",authenticateUser, profileUpload.single("profilePic"),checkSchema(profileSchema), profileCltr.create)
 app.get("/api/profile",authenticateUser, profileCltr.getOne)
 app.put("/api/profile/:profileId", profileUpload.single("profilePic"),authenticateUser,profileCltr.update)
@@ -85,7 +82,7 @@ app.post('/api/getAddress')
 // 
 app.post("/api/event",authenticateUser,eventUpload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
 app.get("/api/paginate/event",eventCltr.paginate)
-app.put("/api/event/:eventId",authenticateUser,eventUpload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.update)
+app.put("/api/event/:eventId",authenticateUser,eventCltr.update)
 
 app.get("/api/event/:eventId",eventCltr.getOne)
 app.put('/api/event/approve/:eventId', eventCltr.approveEvent);
@@ -106,16 +103,17 @@ app.get("/api/event/:userId/:eventId", eventCltr.distanceAmongThem)
 app.post("/api/event/:eventId/booking",authenticateUser, bookingCltr.createBooking)
 app.get("/api/ticket/:bookedId",authenticateUser,bookingCltr.TicketsInfo)
 app.delete("/api/booking/:bookingId",authenticateUser,bookingCltr.cancelBooking)
+app.get("/api/get/false/bookings",authenticateUser,bookingCltr.getAllBookings)
 
-//Payment API s
+//Payment APIs
 app.post("/api/booking/:bookingId/payment",authenticateUser,paymentCltr.paymentCheckoutSession)
 app.put("/api/booking/update-payment",authenticateUser,paymentCltr.updatedPayment)
 app.delete("/api/delete-payment/:paymentId",authenticateUser,paymentCltr.deletePayment)
 
 //Review the Event
-app.post("/api/review/:eventId",authenticateUser,authorizeUser(['Customer']),checkSchema(reviewSchema),reviewCltr.create)
-app.put("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), checkSchema(reviewSchema), reviewCltr.update);
-app.delete("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), reviewCltr.delete);
+// app.post("/api/review/:eventId",authenticateUser,authorizeUser(['Customer']),checkSchema(reviewSchema),reviewCltr.create)
+// app.put("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), checkSchema(reviewSchema), reviewCltr.update);
+// app.delete("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), reviewCltr.delete);
 
 app.delete('/api/review/:reviewId')
 
@@ -129,7 +127,7 @@ app.delete("/api/category/:categoryId", authenticateUser, authorizeUser(["Admin"
 
 
 //Admin API_S
-app.get("/api/dashboard")
+app.get("/api/dashboard",adminCltr.getAggregate)
 
 
 app.listen(process.env.PORT, () => {

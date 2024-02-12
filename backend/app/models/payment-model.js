@@ -19,7 +19,7 @@ const paymentSchema = new Schema({
         default:false
     }
   
-})
+},{timestamps:true})
 
 const PaymentModel = model("PaymentModel",paymentSchema)
 

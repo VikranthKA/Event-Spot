@@ -26,7 +26,7 @@ const profileSchema = new Schema({
         ref:"BookingModel"
     }]
 
-})
+},{timestamps:true})
 
 const ProfileModel = model("ProfileModel",profileSchema)
 

@@ -12,7 +12,7 @@ const userSchema = new Schema({
         default:true
     }
 
-})
+},{timestamps:true})
 
 const UserModel = model("UserModel",userSchema)
 

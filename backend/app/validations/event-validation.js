@@ -60,7 +60,41 @@ const validateFiles = (req,res,next)=>{
     next()
 }
 
-module.exports = {validatedRequest,validateFiles}
+const editEventSchema = Joi.object({
+  title: Joi.string().trim().required(),
+  eventStartDateTime: Joi.string().isoDate().required(),
+  description: Joi.string().trim().required(),
+  ticketSaleStartTime: Joi.string().isoDate().required(),
+  ticketSaleEndTime: Joi.string().isoDate().required(),
+  venueName: Joi.string().trim().required(),
+  ticketType: Joi.array().items(Joi.object({
+    ticketName: Joi.string().trim().required(),
+    ticketPrice: Joi.number().min(0).required(),
+    ticketCount: Joi.number().min(0).required(),
+  })).required(),
+  youTube: Joi.object({
+    title: Joi.string().trim().required(),
+    url: Joi.string().uri().required(),
+  }).required(),
+  actors: Joi.array().items(Joi.object({
+    name: Joi.string().trim().required()
+  })).required(),
+  // Add more fields as needed
+});
+
+// Function to validate form data
+
+const validatedEditRequest = (req,res,next)=>{
+   console.log(req.body)
+  const {error} = editEventSchema.validate(req.body)
+  if(error){
+      res.status(400).send(error.details[0].message)  
+  }else{
+      next()
+  }
+}
+
+module.exports = {validatedRequest,validateFiles,validatedEditRequest}
 
 // Use this schema to validate your data
 

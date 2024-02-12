@@ -32,7 +32,7 @@ profileCltr.create = async (req, res) => {
     try {
         const profile = new ProfileModel({
         userId:req.user.id,
-        profilePic: req.file.filename,
+        profilePic: req.file.key,
         description: body.description,
         addressInfo: {
             address: body.address,
@@ -80,7 +80,7 @@ profileCltr.create = async (req, res) => {
         };
 
         if (req.file) {
-            updatedProfile.profilePic = req.file.filename;
+            updatedProfile.profilePic = req.file.key;
         }
 
         const profile = await ProfileModel.findOneAndUpdate(
@@ -118,7 +118,15 @@ profileCltr.getOne = async (req, res) => {
 
     try {
         // Find the profile by profileId and ensure it belongs to the authenticated user
-        const profile = await ProfileModel.findOne({ userId: req.user.id} ).populate("userId").populate("bookings");
+        const profile = await ProfileModel.findOne({ userId: req.user.id}
+             ).populate("userId").populate({
+                path: 'bookings',
+                populate: {
+                    path: 'eventId',
+                    model: 'EventModel',
+                    select: '_id title eventStartDateTime'
+                }
+            })
         
         if (!profile) {
             // If profile is not found or doesn't belong to the authenticated user

@@ -29,7 +29,7 @@ const bookingSchema = new Schema({
         default:false
     }
 
-})
+},{timestamps:true})
 
 const BookingModel = model("BookingModel",bookingSchema)
 

@@ -1,4 +1,7 @@
+const CategoryModel = require("../models/category-model")
 const EventModel = require("../models/event-model")
+const PaymentModel = require("../models/payment-model")
+const ProfileModel = require("../models/profile-model")
 const UserModel = require("../models/user-model")
 
 const adminCltr = {}
@@ -45,6 +48,10 @@ adminCltr.getUser = async(req,res)=>{
       return res.status(500).json(err)
     }
   }
+
+
+
+
 //get all the revenue
 //get all the new customer from today
 //get all the events
@@ -57,3 +64,139 @@ adminCltr.getUser = async(req,res)=>{
 //get the user with type of payment and the currency type
 
 }
+
+adminCltr.getAggregate = async (req, res) => {
+    try {
+        const dashboard = {
+            userInfo:{
+                activeUsers: 0,
+                notActiveUsers: 0
+              },
+            totalAmount:0,
+            popularEvent:0,
+            category:{
+                info:0,
+                categoryEvents:0
+            },
+            review:0
+        }
+
+        //getting the all the userActive information
+       
+  
+      const [activeUsersData, notActiveUsersData] = await Promise.all([
+        UserModel.aggregate([
+          {
+            $match: {
+              isActive: true
+            }
+          },
+          {
+            $count: "activeUsers"
+          }
+        ]),
+        UserModel.aggregate([
+          {
+            $match: {
+              isActive: false
+            }
+          },
+          {
+            $count: "notActiveUsers"
+          }
+        ])
+      ]);
+  
+      if (activeUsersData.length > 0) {
+        dashboard.userInfo.activeUsers = activeUsersData[0].activeUsers;
+      }
+  
+      if (notActiveUsersData.length > 0) {
+        dashboard.userInfo.notActiveUsers = notActiveUsersData[0].notActiveUsers;
+      }
+
+      const today = new Date()
+      today.setHours(0,0,0,0)
+      dashboard.totalAmount = await PaymentModel.aggregate([
+        {
+            $match :{
+                paymentDate:{
+                    $gte : today,
+                    $lt:new Date(today.getTime()+24*60*60*1000)
+
+
+                }
+            }
+        },//next pipeline
+        {
+            $group:{
+                _id:null,
+                totalAmount:{$sum:"$amount"}
+            }
+        }
+      ])//return a array
+
+      dashboard.popularEvent = await EventModel.aggregate([
+        {
+            $unwind: "$ticketType" 
+        },
+        {
+            $project: {
+                _id: 1,
+                title: 1,
+                ticketsSold: {
+                    $subtract: ["$ticketType.ticketCount", "$ticketType.remainingTickets"]
+                }
+            }
+        },
+        {
+            $sort: { ticketsSold: -1 }
+        },
+        {
+            $limit: 10
+        }
+    ])
+
+    dashboard.category.info = await EventModel.aggregate([
+        {
+            $group:{
+                _id:"$categoryId",
+                count:{
+                    $sum:1
+                }
+            }
+        }
+    ])
+    dashboard.category.categoryEvents = await CategoryModel.find().populate({
+        path:"events" ,select :"title _id eventStartDateTime"
+    })
+
+    dashboard.review = await EventModel.aggregate([
+        {
+        $match :{
+            reviews:{$exists :true ,$ne:[]}
+                }
+        },
+        {
+            $unwind:"$reviews"
+        },{
+            $group:{
+                _id:null,
+                averageRating:{$avg:"$reviews.rating"}
+            }
+        }
+    ])
+
+
+
+
+
+      return res.json(dashboard);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  };
+  
+
+module.exports = adminCltr

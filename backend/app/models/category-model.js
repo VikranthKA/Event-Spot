@@ -9,7 +9,7 @@ const categorySchema = new Schema({
     }]
 
 
-})
+},{timestamps:true})
 
 const CategoryModel = model("CategoryModel",categorySchema)
 
