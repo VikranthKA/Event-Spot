@@ -221,6 +221,7 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
             }
         })
 
+
         // if (radiusEvents.length === 0) {
         //     return res.status(404).json({err:"Events Not Found in this radius"})
         // }
@@ -340,22 +341,19 @@ eventCltr.paginate = async (req, res) => {
 eventCltr.getAll = async (req, res) => {
     try {
         const events = await EventModel.find()
-            .populate({
-                path: "organiserId",
-                select: "_id username email"
-            })
-            .populate({
-                path: "categoryId",
-                select: "name"
-            })
-            .populate({
-                path: 'reviews',
-                populate: {
-                    path: 'userId',
-                    model: 'UserModel',
-                    select: '_id username email'
-                }
-            });
+        .populate({
+            path: "organiserId", select: "_id username email"
+        }).populate({
+            path: "categoryId" ,select:"name"
+        })
+        .populate({
+            path: 'reviews',
+            populate: {
+                path: 'userId',
+                model: 'UserModel',
+                select: '_id username email'
+            }
+        })
 
         if (!events || events.length === 0) {
             return res.status(404).json(events);
@@ -372,20 +370,25 @@ eventCltr.getAll = async (req, res) => {
 };
 
 
-eventCltr.getAll=async(req,res)=>{
-    try{
-        const event = await EventModel.find()
-        return res.status(200).json(event)
-    }catch(err){
-        console.log(err)
-        res.json(err)
-    }
-}
+
 
 eventCltr.getOne = async (req, res) => {
 
     try {
-        const event = await EventModel.findById({ _id: req.params.eventId })
+        const event = await EventModel.findById({ _id: req.params.eventId }).populate({
+            path: "organiserId", select: "_id username email"
+        }).populate({
+            path: "categoryId" ,select:"name"
+        })
+        .populate({
+            path: 'reviews',
+            populate: {
+                path: 'userId',
+                model: 'UserModel',
+                select: '_id username email'
+            }
+        })
+
         if (!event) return res.status.json({err:"Error getting the Event"})
         return res.status(200).json(event)
 
@@ -568,7 +571,20 @@ eventCltr.getOneEvent = async (req, res) => {
     try {
         const event = await EventModel.findOne({
             _id: req.params.id, organiserId: req.user.id
+        }).populate({
+            path: "organiserId", select: "_id username email"
+        }).populate({
+            path: "categoryId" ,select:"name"
         })
+        .populate({
+            path: 'reviews',
+            populate: {
+                path: 'userId',
+                model: 'UserModel',
+                select: '_id username email'
+            }
+        })
+
         res.status(200).json(event)
     } catch (err) {
         res.status(500).json({err})
