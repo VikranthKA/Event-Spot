@@ -5,10 +5,8 @@ const geolib = require('geolib')
 const { validationResult, body } = require('express-validator')
 const EventModel = require('../models/event-model')
 const _ = require('lodash')
-const jwt = require("jsonwebtoken")
 const CategoryModel = require("../models/category-model")
 const ProfileModel = require("../models/profile-model")
-const { pipeline } = require("nodemailer/lib/xoauth2")
 
 
 
@@ -195,13 +193,21 @@ function kmToRadians(km) {
   }
 
 eventCltr.getRadiusValueEvent = async (req, res) => {
-
-    const { userlat, userlon, radius } = await req.params 
-    console.log(userlat,userlon,radius)
-    console.log(kmToRadians(radius),"final")
+       // Convert kilometers to radians
+       
+       const { userlat, userlon, radius } = await req.params 
+       console.log(userlat,userlon,radius)
+       const radiusInRadians = radius / 6371; // Earth's radius is approximately 6371 kilometers
+    console.log(kmToRadians(radiusInRadians),"final")
     try {
 
-        const radiusEvents = await EventModel.find({ location: { $geoWithin: { $centerSphere: [[parseFloat(userlon),parseFloat(userlat) ],kmToRadians(radius) ] } } }).populate({
+        const radiusEvents = await EventModel.find({
+            location: {
+                $geoWithin: {
+                    $centerSphere: [[userlon, userlat], radiusInRadians]
+                }
+            }
+        }).populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"

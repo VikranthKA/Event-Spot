@@ -23,6 +23,7 @@ const profileCltr = require("./app/controllers/profile-Cltr")
 const bookingCltr = require("./app/controllers/booking-Cltr")
 const paymentCltr = require("./app/controllers/payment-Cltr")
 const adminCltr = require("./app/controllers/admin-Cltr")
+const reviewCltr = require("./app/controllers/review-Cltr")
 
 const { authenticateUser, authorizeUser } = require("./app/middleware/auth")
 const { decodeAddress, decodeLatLng } = require("./app/utils/decodeAddress")
@@ -110,12 +111,11 @@ app.post("/api/booking/:bookingId/payment",authenticateUser,paymentCltr.paymentC
 app.put("/api/booking/update-payment",authenticateUser,paymentCltr.updatedPayment)
 app.delete("/api/delete-payment/:paymentId",authenticateUser,paymentCltr.deletePayment)
 
-//Review the Event
-// app.post("/api/review/:eventId",authenticateUser,authorizeUser(['Customer']),checkSchema(reviewSchema),reviewCltr.create)
-// app.put("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), checkSchema(reviewSchema), reviewCltr.update);
-// app.delete("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), reviewCltr.delete);
+// Review the Event
+app.post("/api/event/:eventId/review",authenticateUser,authorizeUser(['Customer']),checkSchema(reviewSchema),reviewCltr.create)
+app.put("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), checkSchema(reviewSchema), reviewCltr.update);
+app.delete("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), reviewCltr.delete);
 
-app.delete('/api/review/:reviewId')
 
 
 //category APIs

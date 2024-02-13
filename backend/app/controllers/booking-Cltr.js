@@ -197,7 +197,6 @@ bookingCltr.cancelBooking = async (req, res) => {
     const { bookingId } = req.params //send the form front end 
     try {
         const booking = await BookingModel.findOne({ _id: bookingId, userId: req.user.id })
-            
         //check the if the payment is create for this user and ticket if that sucess then say payment done
 
 
@@ -230,6 +229,7 @@ bookingCltr.cancelBooking = async (req, res) => {
         return res.status(500).json(err)
     }
 }
+
 
 
 module.exports = bookingCltr
