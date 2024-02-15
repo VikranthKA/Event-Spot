@@ -186,17 +186,18 @@ userCltr.resetPassword = async (req, res) => {
 
 
 userCltr.deactivate = async (req, res) => {
-  const { userId } = req.params; // Correctly retrieve userId from request parameters
+  const { userId } = req.params;
   try {
-    const user = await UserModel.findById(userId);
-    if (!user) return res.status(404).json({ err: "User Not Found" });
-    const userUpdate = await UserModel.findByIdAndUpdate(userId, { isActive: false }, { new: true });
-    return res.status(200).json({ message: `${user.username} account isActive changed to ${userUpdate.isActive}` });
+      const user = await UserModel.findById(userId);
+      if (!user) return res.status(404).json({ err: "User Not Found" });
+      const updatedUser = await UserModel.findByIdAndUpdate(userId, { isActive: !user.isActive }, { new: true });
+      return res.status(200).json(updatedUser);
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Internal Server Error" });
+      console.error(err);
+      return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 
