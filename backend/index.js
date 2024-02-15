@@ -112,9 +112,9 @@ app.put("/api/booking/update-payment",authenticateUser,paymentCltr.updatedPaymen
 app.delete("/api/delete-payment/:paymentId",authenticateUser,paymentCltr.deletePayment)
 
 // Review the Event
-app.post("/api/event/:eventId/review",authenticateUser,authorizeUser(['Customer']),checkSchema(reviewSchema),reviewCltr.create)
-app.put("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), checkSchema(reviewSchema), reviewCltr.update);
-app.delete("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), reviewCltr.delete);
+app.post("/api/event/:eventId/review",authenticateUser,authorizeUser(['Customer']),checkSchema(reviewSchema),reviewCltr.createReviewForEvent)
+app.put("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']), checkSchema(reviewSchema),reviewCltr.updateReviewForEvent);
+app.delete("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUser(['Customer']),reviewCltr.deleteReviewForEvent )
 
 
 

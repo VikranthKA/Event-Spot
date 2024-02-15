@@ -7,6 +7,7 @@ const EventModel = require('../models/event-model')
 const _ = require('lodash')
 const CategoryModel = require("../models/category-model")
 const ProfileModel = require("../models/profile-model")
+const ReviewModel = require("../models/review-model")
 
 
 
@@ -340,34 +341,39 @@ eventCltr.paginate = async (req, res) => {
 
 eventCltr.getAll = async (req, res) => {
     try {
-        const events = await EventModel.find()
-        .populate({
-            path: "organiserId", select: "_id username email"
-        }).populate({
-            path: "categoryId" ,select:"name"
-        })
-        .populate({
-            path: 'reviews',
-            populate: {
-                path: 'userId',
-                model: 'UserModel',
-                select: '_id username email'
-            }
-        })
+        let events = await EventModel.find()
+            .populate({
+                path: "organiserId", select: "_id username email"
+            })
+            .populate({
+                path: "categoryId", select: "name"
+            })
+            .populate({
+                path: 'reviews',
+                populate: {
+                    path: 'reviewId',
+                    model: 'ReviewModel',
+                }
+            });
+
+        // Populate the userId field inside each review object
+        for (let event of events) {
+            await ReviewModel.populate(event.reviews, { path: 'reviewId.userId', select: '_id username email' });
+        }
 
         if (!events || events.length === 0) {
             return res.status(404).json(events);
         }
-        console.log(events)
 
-        return res.status(200).json({
+        return res.status(200).json(
             events
-        });
+        );
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+
 
 
 
@@ -579,12 +585,15 @@ eventCltr.getOneEvent = async (req, res) => {
         .populate({
             path: 'reviews',
             populate: {
-                path: 'userId',
-                model: 'UserModel',
+                path: 'reviewId',
+                model: 'ReviewModel',
                 select: '_id username email'
             }
         })
 
+        await ReviewModel.populate(event.reviews, { path: 'userId', select: '_id username email' });
+
+        console.log(event)
         res.status(200).json(event)
     } catch (err) {
         res.status(500).json({err})

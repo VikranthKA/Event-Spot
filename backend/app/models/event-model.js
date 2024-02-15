@@ -59,14 +59,12 @@ const eventSchema = new Schema({
         type: Boolean,
         default: false
     },
+    
     reviews: [{
-        userId: {
-            type: Schema.Types.ObjectId,
-            ref: 'UserModel'
-        },
-        title: String,
-        body: String,
-        rating: String
+        reviewId:{
+        type: Schema.Types.ObjectId,
+        ref: 'ReviewModel'
+    }
     }],
     actors:[{
         name:String,

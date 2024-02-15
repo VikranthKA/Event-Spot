@@ -14,13 +14,12 @@ bookingCltr.createBooking = async (req, res) => {
     try {
         console.log(eventId,"eventId")
         const profile = await ProfileModel.findOne({userId : req.user.id})
-        if(!profile) await new ProfileModel().save()
+        if(!profile) await new ProfileModel({userId:req.user.id}).save()
         const event = await EventModel.findById({_id:eventId})
         if (!event) {
             return res.status(404).json({ error: 'Cannot find the Event' });
         }
         console.log(event,"i am event")
-
         // Transform the incoming tickets array to match the BookingModel structure
         const transformedTickets = tickets.map(ticket => ({
             ticketId: ticket._id,
