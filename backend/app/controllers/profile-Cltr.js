@@ -117,7 +117,19 @@ profileCltr.getAll=async(req,res)=>{
 profileCltr.getOne = async (req, res) => {
     try {
         // Find the profile by profileId and ensure it belongs to the authenticated user
-        const profile = await ProfileModel.findOne({ userId: req.user.id }).populate("userId").populate("bookings");
+        const profile = await ProfileModel.findOne({ userId: req.user.id })
+        .populate("userId")
+        .populate("bookings")
+        .populate(
+            {
+             path:"bookings",
+             populate:{
+             path:"eventId",
+             model:"EventModel",
+             select:"_id title eventStartDateTime" 
+            }
+        })
+
         
         if (!profile) {
             // If profile is not found or doesn't belong to the authenticated user
@@ -151,5 +163,5 @@ profileCltr.delete=async(req,res)=>{
 
 
 
-module.exports = profileCltr  
+module.exports = profileCltr
 

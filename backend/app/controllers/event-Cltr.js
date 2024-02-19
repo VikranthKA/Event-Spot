@@ -76,7 +76,7 @@ async function getAddressByGeoCode(data) {
 
 
 function totalCount(ticketArray) {
-    return ticketArray.reduce((total, ticket) => total + ticket.ticketCount, 0);
+    return ticketArray.reduce((total, ticket) => parseInt(total) + parseInt(ticket.ticketCount), 0);
 }
 
 function momentConvertion(date) {
@@ -199,7 +199,6 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
        const { userlat, userlon, radius } = await req.params 
        console.log(userlat,userlon,radius)
        const radiusInRadians = radius / 6371; // Earth's radius is approximately 6371 kilometers
-    console.log(kmToRadians(radiusInRadians),"final")
     try {
 
         const radiusEvents = await EventModel.find({
@@ -223,22 +222,21 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
         })
 
 
-        // if (radiusEvents.length === 0) {
-        //     return res.status(404).json({err:"Events Not Found in this radius"})
-        // }
+        if (radiusEvents.length === 0) {
+            return res.status(404).json({err:"Events Not Found in this radius"})
+        }
 
-        // const validEvents = radiusEvents.filter((event) => {
-        //     return event.isApproved === true && new Date(event.eventStartDateTime) >= new Date()
-        // })
-        // console.log(validEvents)
+        const validEvents = radiusEvents.filter((event) => {
+            return event.isApproved === true && new Date(event.eventStartDateTime) >= new Date()
+        })
+        console.log(validEvents)
 
 
-        // if (validEvents.length === 0) {
-        //     return res.status(404).json(validEvents)
-        // }
-        // return res.status(200).json(validEvents)
-        console.log(radiusEvents.length)
-        res.json(radiusEvents)
+        if (validEvents.length === 0) {
+            return res.status(404).json(validEvents)
+        }
+        return res.status(200).json(validEvents)
+
 
 
     } catch (err) {
@@ -335,13 +333,9 @@ eventCltr.paginate = async (req, res) => {
 }
 
 
-
-
-
-
 eventCltr.getAll = async (req, res) => {
     try {
-        let events = await EventModel.find()
+        let events = await EventModel.find({isApproved:true})
             .populate({
                 path: "organiserId", select: "_id username email"
             })
@@ -381,7 +375,7 @@ eventCltr.getAll = async (req, res) => {
 eventCltr.getOne = async (req, res) => {
 
     try {
-        const event = await EventModel.findById({ _id: req.params.eventId }).populate({
+        const event = await EventModel.findById({ _id: req.params.eventId,status:true }).populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"
@@ -455,15 +449,7 @@ eventCltr.getEvent = async (req, res) => {
         const { location } = req.query;
         const { category } = req.query
 
-        const query = {};
-        if (location) {
-            query.location = location;
-        }
-        if (category) {
-            query.category = category;
-        }
 
-        const events = await EventModel.find(query);
         res.status(200).json(events);
     } catch (err) {
         res.status(500).json(err);

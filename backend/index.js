@@ -20,7 +20,7 @@ const usercltr = require("./app/controllers/user-cltr")
 const eventCltr = require("./app/controllers/event-Cltr")
 const categoryCltr = require("./app/controllers/category-Cltr")
 const profileCltr = require("./app/controllers/profile-Cltr")
-const bookingCltr = require("./app/controllers/booking-Cltr")
+const {bookingCltr} = require("./app/controllers/booking-Cltr")
 const paymentCltr = require("./app/controllers/payment-Cltr")
 const adminCltr = require("./app/controllers/admin-Cltr")
 const reviewCltr = require("./app/controllers/review-Cltr")
@@ -89,6 +89,7 @@ app.get("/api/event/:eventId",eventCltr.getOne)
 app.put('/api/event/approve/:eventId', eventCltr.approveEvent);
 app.put('/api/event/cancel-approve/:eventId', eventCltr.cancelApprovalEvent)
 app.get('/api/event',eventCltr.getAll)
+app.get('/api/org-stats',eventCltr.mostPopularEvent)
 
 app.delete("/api/event/:eventId")
 
