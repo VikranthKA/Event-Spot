@@ -107,6 +107,7 @@ app.get("/api/ticket/:bookedId",authenticateUser,bookingCltr.TicketsInfo)
 app.delete("/api/booking/:bookingId",authenticateUser,bookingCltr.cancelBooking)
 app.get("/api/get/false/bookings",authenticateUser,bookingCltr.getAllBookings)
 
+
 //Payment APIs
 app.post("/api/booking/:bookingId/payment",authenticateUser,paymentCltr.paymentCheckoutSession)
 app.put("/api/booking/update-payment",authenticateUser,paymentCltr.updatedPayment)
@@ -125,7 +126,8 @@ app.get("/api/categoryall", categoryCltr.getAll)
 app.get("/api/category/:categoryId", categoryCltr.getOne)// check 
 app.put("/api/category/:categoryId", authenticateUser, authorizeUser(["Admin"]), checkSchema(categoryValidationSchema), categoryCltr.update)
 app.delete("/api/category/:categoryId", authenticateUser, authorizeUser(["Admin"]), categoryCltr.delete)
-
+app.get("/api/category",categoryCltr.getAllCatAndEvents)
+app.get("/api/category/:categoryId",categoryCltr.getByCatId)
 
 //Admin API_S
 app.get("/api/dashboard",adminCltr.getAggregate)

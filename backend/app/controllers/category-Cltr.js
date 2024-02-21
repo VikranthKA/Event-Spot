@@ -32,14 +32,52 @@ categoryCltr.getAll = async(req,res)=>{
     }
 }
 
+categoryCltr.getByCatId = async(req,res)=>{
+    const {categoryId} = req.params
+    try{
+        const cat = await EventModel.find({categoryId})
+        return res.status(200).json(cat)
+    }catch(err){
+        console.log(err)
+        res.json(err)
+    }
+}
+
 categoryCltr.getOne = async(req,res)=>{
     const categoryId = req.params.categoryId
     try{
-        const cat =await CategoryModel.findById(categoryId)
+        const cat =await CategoryModel.findById(categoryId).populate({
+            path:"events",
+            populate:{
+                path:"eventId",
+                model:"EventModel",
+                select:"_id title eventStartDateTime posters"
+            }
+        
+        })
         res.status(200).json(cat)
     }catch(err){
         res.status(500).json(err)
 
+    }
+}
+
+categoryCltr.getAllCatAndEvents = async(req,res)=>{
+    try{
+         const cat = await CategoryModel.find()
+        .populate({
+            path:"events",
+            populate:{
+                path:"eventId",
+                model:"EventModel",
+                select:"_id title eventStartDateTime"
+            }
+        
+        })
+        res.json(cat)
+    }catch(err){
+        console.log(err)
+        res.json(err)
     }
 }
 

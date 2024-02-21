@@ -157,7 +157,8 @@ eventCltr.create = async (req, res) => {
 
         await event.save()
         // await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { event: event._id } })
-        await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
+        await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: {eventId:event._id} } })//check
+        // await EventModel.findByIdAndUpdate(eventId, { $pull: { reviews: { reviewId } } });
 
         const populatedEvent = await EventModel.populate(event, [
             { path: 'organiserId', select: '_id username email' },
@@ -220,16 +221,17 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
                 select: '_id username email'
             }
         })
+        console.log(radiusEvents.length,"found but not filtered")
 
 
         if (radiusEvents.length === 0) {
             return res.status(404).json({err:"Events Not Found in this radius"})
         }
 
-        const validEvents = radiusEvents.filter((event) => {
-            return event.isApproved === true && new Date(event.eventStartDateTime) >= new Date()
+        const validEvents = radiusEvents.filter((event) => {//do the aggrgate for this
+            return event.isApproved === true && new Date(event.ticketSaleEndTime) >= new Date()
         })
-        console.log(validEvents)
+        console.log(validEvents.length,"total Events")  
 
 
         if (validEvents.length === 0) {
@@ -444,15 +446,20 @@ eventCltr.approveEvent = async (req, res) => {
   
 
 
-eventCltr.getEvent = async (req, res) => {
-    try {
-        const { location } = req.query;
-        const { category } = req.query
-
-
-        res.status(200).json(events);
-    } catch (err) {
-        res.status(500).json(err);
+  eventCltr.getByCity = async (req, res) => {
+    const { city} = req.query;
+    if (city) {
+        const cityData = city.split(',');
+        console.log(city)
+        const city = addressInfo.city
+        try {
+            const matchingCity = await EventModel.find({city : { $all: cityData } })
+            console.log(matchingCity)
+            return res.status(200).json(matchingCity)
+        } catch (e) {
+            console.error(e);
+            return res.status(500).json(e);
+        }
     }
 };
 

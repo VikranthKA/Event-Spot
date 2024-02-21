@@ -3,7 +3,6 @@ const ProfileModel = require("../models/profile-model")
 const _ = require("lodash")
 const { validationResult } = require("express-validator")
 const axios = require("axios")
-const UserModel = require("../models/user-model")
 
 
 async function getCoByGeoCode(data,res){
@@ -62,7 +61,6 @@ profileCltr.create = async (req, res) => {
         return res.status(400).json(errors);
     }
 
-    const { profileId } = req.params;
     const body = _.pick(req.body, ["description", "address", "lonlat", "city"]);
 
     try {
