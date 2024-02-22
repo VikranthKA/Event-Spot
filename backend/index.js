@@ -55,6 +55,7 @@ const { userLoginSchema, userRegSchema, userUpdatePassword ,userForgotPassword} 
 const categoryValidationSchema = require("./app/validations/category-validation")
 const { profileSchema } = require("./app/validations/profile-validation")
 const {reviewSchema} = require("./app/validations/review-validation")
+const ticketValidationSchema = require("./app/validations/booking-validation")
 const {validatedRequest,validateFiles,validatedEditRequest} = require("./app/validations/event-validation");
 
 //user APIs
@@ -102,7 +103,7 @@ app.post("/api/reversecoding")
 app.get("/api/event/:userId/:eventId", eventCltr.distanceAmongThem)
 
 //Booking Api S
-app.post("/api/event/:eventId/booking",authenticateUser, bookingCltr.createBooking)
+app.post("/api/event/:eventId/booking",authenticateUser,checkSchema(ticketValidationSchema), bookingCltr.createBooking)
 app.get("/api/ticket/:bookedId",authenticateUser,bookingCltr.TicketsInfo)
 app.delete("/api/booking/:bookingId",authenticateUser,bookingCltr.cancelBooking)
 app.get("/api/get/false/bookings",authenticateUser,bookingCltr.getAllBookings)
