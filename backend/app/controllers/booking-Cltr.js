@@ -10,8 +10,14 @@ const funEmail = require("../utils/NodeMailer/email");
 const bookingCltr = {};
 
 bookingCltr.createBooking = async (req, res) => {
-    const { eventId } = req.params;
+
+    const error = validationResult(req)
+    if(!error.isEmpty()){
+        return res.status(400).json({err:error.array()})
+    }
+    const { eventId } = req.params
     const { tickets } = req.body;
+    console.log(tickets)
 
     try {
         const profile = await ProfileModel.findOne({userId : req.user.id})
@@ -53,7 +59,8 @@ bookingCltr.createBooking = async (req, res) => {
             eventId,
             tickets: transformedTickets,
             totalAmount: totalAmount,
-        });
+        })
+
 
         const updatedTicketTypes = event.ticketType.map(eventTicket => {
             const matchingTicket = transformedTickets.find(ticket => ticket.ticketType === eventTicket.ticketName);
