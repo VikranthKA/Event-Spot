@@ -330,7 +330,7 @@ eventCltr.paginate = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        return res.status(500).json({ error: ' Server Error' });
     }
 }
 
