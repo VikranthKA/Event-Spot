@@ -1,3 +1,5 @@
+const { validationResult } = require('express-validator');
+
 const ticketValidationSchema = {
     ticketName: {
         notEmpty: {
@@ -47,4 +49,20 @@ const ticketValidationSchema = {
     }
 }
 
-module.exports = ticketValidationSchema
+
+
+function validateTicket(ticket) {
+    const errors = validationResult(ticket);
+
+    if (!errors.isEmpty()) {
+        throw new Error(errors.array().map(error => error.msg).join(", "));
+    }
+}
+
+function validateTicketArray(ticketArray) {
+    ticketArray.forEach(ticket => {
+        validateTicket(ticket);
+    });
+}
+
+module.exports = { ticketValidationSchema, validateTicket, validateTicketArray }

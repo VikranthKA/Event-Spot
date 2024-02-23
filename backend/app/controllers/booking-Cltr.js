@@ -27,18 +27,18 @@ bookingCltr.createBooking = async (req, res) => {
             return res.status(404).json({ error: 'Cannot find the Event' });
         }
         // Transform the incoming tickets array to match the BookingModel structure
-        const transformedTickets = tickets.map(ticket => ({
+        const transformedTickets = tickets?.map(ticket => ({
             ticketId: ticket._id,
             ticketType: ticket.ticketName,  // Assuming _id is the reference to EventModel
             quantity: ticket.Quantity,
             ticketPrice: ticket.ticketPrice,
             totalAmount: ticket.ticketPrice * ticket.Quantity, // Include totalAmount for each ticket
         }));
-        const totalAmount = transformedTickets.reduce((total, ticket) => total + (ticket.ticketPrice * ticket.Quantity), 0);
+        const totalAmount = transformedTickets?.reduce((total, ticket) => total + (ticket?.ticketPrice * ticket?.Quantity), 0);
 
         // Check if there are enough available seats for the specified ticket types
-        const availableSeats = transformedTickets.every(ticket => {
-            const matchingTicket = event.ticketType.find(eventTicket => eventTicket.ticketName === ticket.ticketType);
+        const availableSeats = transformedTickets?.every(ticket => {
+            const matchingTicket = event?.ticketType?.find(eventTicket => eventTicket?.ticketName === ticket?.ticketType);
 
             if (!matchingTicket) {
                 return false; // Ticket not found in the event.ticketType array
@@ -194,59 +194,6 @@ async function cancelBookingFunction(bookingId){
 }
 
 
-// cron.schedule('* * * * *',async()=>{
-//     try{
-//         const bookingToCancel = await BookingModel.find({status:false})
-
-//         bookingToCancel.forEach(async booking=>{
-//             await cancelBookingFunction(booking._id)
-//         })
-//     }catch(err){
-//         console.log("Error in the cancel booking in cron",err)
-//     }
-// })
-
-
-cron.schedule("0 0 * * *", async () => {
-    console.log("inside cron")
-    try {
-        // Find bookings with event start time within the next 5 minutes
-        const currentDateTime = new Date()
-        const futureDateTime = new Date(currentDateTime.getTime() + 5 * 60000)// 5 minutes from now
-        const bookings = await BookingModel.find().populate({
-            path: 'eventId',
-            match: {
-                'eventStartDateTime': { $lte: futureDateTime }
-            },
-            select: 'eventStartDateTime' // Populate only the eventStartDateTime field
-        }).populate({
-            path: 'userId',
-            select: 'email'
-        });
-        console.log(bookings)
-
-        // Filter out bookings where eventId.eventStartDateTime is less than or equal to futureDateTime
-        const filteredBookings = bookings.filter(booking => booking.eventId !== null);
-
-
-        filteredBookings.forEach(async (booking) => {
-            const userEmail = booking.userId.email;
-            const eventStart = booking.eventId.eventStartDateTime; // Access eventStartDateTime from populated eventId
-            const eventTitle = booking.eventId.title; // Assuming you have a 'title' field in your EventModel
-
-            await funEmail({
-                email: userEmail,
-                subject: `Event Reminder: ${eventTitle}`,
-                message: `Your event "${eventTitle}" starts in 5 minutes at ${eventStart}.`
-              })
-
-            
-            console.log(`Reminder email sent to ${userEmail}`);
-        });
-    } catch (error) {
-        console.error('Error sending email reminders:', error);
-    }
-})
 
 ///write a logic in the FE and show Timer of the 5 min if the times exists more then, call canelPayment and also add button to the says cancel payment
 bookingCltr.cancelBooking = async (req, res) => {

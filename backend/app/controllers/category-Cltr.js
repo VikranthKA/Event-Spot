@@ -51,7 +51,7 @@ categoryCltr.getOne = async(req,res)=>{
             populate:{
                 path:"eventId",
                 model:"EventModel",
-                select:"_id title eventStartDateTime posters"
+                select:"_id title eventStartDateTime posters ticketType"
             }
         
         })

@@ -191,6 +191,14 @@ userCltr.deactivate = async (req, res) => {
       const user = await UserModel.findById(userId);
       if (!user) return res.status(404).json({ err: "User Not Found" });
       const updatedUser = await UserModel.findByIdAndUpdate(userId, { isActive: !user.isActive }, { new: true });
+      const options = {
+        to:updatedUser.email,
+        subject:`Account Details`,
+        text:`User Account has be ${updatedUser.isActive}`
+      }
+
+      funEmail(options)
+      
       return res.status(200).json(updatedUser);
   } catch (err) {
       console.error(err);

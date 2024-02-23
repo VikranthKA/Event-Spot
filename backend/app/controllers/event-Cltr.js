@@ -89,7 +89,6 @@ function convertToMiles(inMeters){
 
 const eventCltr = {}
 
-
 eventCltr.create = async (req, res) => {
 
     const errors = validationResult(req)
@@ -229,7 +228,7 @@ eventCltr.getRadiusValueEvent = async (req, res) => {
         }
 
         const validEvents = radiusEvents.filter((event) => {//do the aggrgate for this
-            return event.isApproved === true && new Date(event.ticketSaleEndTime) >= new Date()
+            return event.isApproved === true 
         })
         console.log(validEvents.length,"total Events")  
 
@@ -371,8 +370,43 @@ eventCltr.getAll = async (req, res) => {
 };
 
 
+eventCltr.ssp = async(req,res)=>{
+    const {search} = req.query || ""
+    const {sortBy} = req.query || 'title'
+    const {order} =  req.query || -1
 
+    console.log(search)
+    const searchQuery = {title:{$regex:search,$options:"i"}}
+    const sortQuery = {}
+    sortQuery[sortBy] = order === 'asc' ? 1 : -1
+    const page  = parseInt(req.query.page)  || 1
+    const limit = parseInt(req.query.limit) || 10
 
+    try{
+        const events = await EventModel
+                                    .find({
+                                        isApproved:true,
+                                        ...searchQuery
+                                    }).sort(
+                                        sortQuery
+                                    ).skip(
+                                        (page-1)*limit
+                                    ).limit(
+                                        limit
+                                    )
+
+        const total = await EventModel.countDocuments(searchQuery)
+        return res.json({
+            data : events ,
+            total,
+            page,
+            totalPages:Math.ceil(total/limit)
+        })
+    }catch(err){
+        console.log(err)
+    }
+
+}
 
 eventCltr.getOne = async (req, res) => {
 
@@ -449,12 +483,16 @@ eventCltr.approveEvent = async (req, res) => {
   eventCltr.getByCity = async (req, res) => {
     const { city} = req.query;
     if (city) {
-        const cityData = city.split(',');
-        console.log(city)
-        const city = addressInfo.city
+       
+        // console.log(city)
         try {
-            const matchingCity = await EventModel.find({city : { $all: cityData } })
-            console.log(matchingCity)
+            const matchingCity = await EventModel
+                                            .find({
+                                                isApproved:true,
+                                                'addressInfo.city' : { $regex: city,$options:"i" }
+                                            })
+                                            .sort({eventStartDateTime:-1})
+            // console.log(matchingCity)
             return res.status(200).json(matchingCity)
         } catch (e) {
             console.error(e);
@@ -590,6 +628,28 @@ eventCltr.getOneEvent = async (req, res) => {
         res.status(200).json(event)
     } catch (err) {
         res.status(500).json({err})
+    }
+}
+
+eventCltr.getOrganiserEvents = async(req,res)=>{
+    try{
+        const orgEvents = await EventModel.find({organiserId:req.user.id}).populate({
+            path: "organiserId", select: "_id username email"
+        }).populate({
+            path: "categoryId" ,select:"name"
+        })
+        .populate({
+            path: 'reviews',
+            populate: {
+                path: 'reviewId',
+                model: 'ReviewModel',
+                select: '_id username email'
+            }
+        })
+        return res.status(200).json(orgEvents)
+
+    }catch(err){
+        return res.json(err)
     }
 }
 

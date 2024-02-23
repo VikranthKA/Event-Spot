@@ -3,13 +3,18 @@ require("dotenv").config()
 const express = require("express")
 const cors = require("cors")
 const { checkSchema } = require("express-validator")
-const morgan = require('morgan');
+const morgan = require('morgan')
+const cron  = require('node-cron')
 
 const db = require("./config/db")
 
-const app = express()
 
+const app = express()
+///connect to the db
 db()
+
+
+
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(cors())
@@ -57,6 +62,14 @@ const { profileSchema } = require("./app/validations/profile-validation")
 const {reviewSchema} = require("./app/validations/review-validation")
 const ticketValidationSchema = require("./app/validations/booking-validation")
 const {validatedRequest,validateFiles,validatedEditRequest} = require("./app/validations/event-validation");
+const { nodeCronCltr } = require("./app/controllers/node-cron-Cltr");
+
+const BookingModel = require("./app/models/booking-model")
+
+
+///cron 
+nodeCronCltr() 
+// cron.getTasks() to get the list of schedule
 
 //user APIs
 app.post("/api/user/register", checkSchema(userRegSchema), usercltr.register)
@@ -81,7 +94,7 @@ app.put("/api/profile", profileUpload.single("profilePic"),authenticateUser,prof
 
 //event ApiS
 app.post('/api/getAddress')
-// 
+ 
 app.post("/api/event",authenticateUser,eventUpload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
 app.get("/api/paginate/event",eventCltr.paginate)
 app.put("/api/event/:eventId",authenticateUser,eventCltr.update)
@@ -91,6 +104,9 @@ app.put('/api/event/approve/:eventId', eventCltr.approveEvent);
 app.put('/api/event/cancel-approve/:eventId', eventCltr.cancelApprovalEvent)
 app.get('/api/event',eventCltr.getAll)
 app.get('/api/org-stats',eventCltr.mostPopularEvent)
+
+app.get(`/api/ssp`,eventCltr.ssp)
+app.get('/api/address',eventCltr.getByCity)
 
 app.delete("/api/event/:eventId")
 
@@ -102,8 +118,13 @@ app.post("/api/reversecoding")
 //find the distance btw user and the event
 app.get("/api/event/:userId/:eventId", eventCltr.distanceAmongThem)
 
+
+//get all the organiser Events 
+app.get("/api/organiser-events",authenticateUser,eventCltr.getOrganiserEvents)
+
+
 //Booking Api S
-app.post("/api/event/:eventId/booking",authenticateUser,checkSchema(ticketValidationSchema), bookingCltr.createBooking)
+app.post("/api/event/:eventId/booking",authenticateUser, bookingCltr.createBooking)
 app.get("/api/ticket/:bookedId",authenticateUser,bookingCltr.TicketsInfo)
 app.delete("/api/booking/:bookingId",authenticateUser,bookingCltr.cancelBooking)
 app.get("/api/get/false/bookings",authenticateUser,bookingCltr.getAllBookings)
@@ -135,10 +156,74 @@ app.get("/api/dashboard",adminCltr.getAggregate)
 
 
 app.listen(process.env.PORT, () => {
-
-
     console.log("Server running on the PORT", process.env.PORT)
 })
+
+cron.schedule("0 0 * * *", async () => {
+    try {
+        // find bookings with event start time within the next 5 minutes
+        const currentDateTime = new Date()
+        const futureDateTime = new Date(currentDateTime.getTime() + 5 * 60000)// 5 min  now
+        const bookings = await BookingModel.find().populate({
+            path: 'eventId',
+            match: {
+                'eventStartDateTime': { $lte: futureDateTime }
+            },
+            select: 'eventStartDateTime' // populate  the eventStartDateTime 
+        }).populate({
+            path: 'userId',
+            select: 'email'
+        });
+
+        // Filter out bookings where eventId.eventStartDateTime is less than or equal to futureDateTime
+        const filteredBookings = bookings.filter(booking => booking.eventId !== null);
+
+
+        filteredBookings.forEach(async (booking) => {
+            const userEmail = booking.userId.email;
+            const eventStart = booking.eventId.eventStartDateTime; // Access eventStartDateTime from populated eventId
+            const eventTitle = booking.eventId.title; // Assuming you have a 'title' field in your EventModel
+
+            await funEmail({
+                email: userEmail,
+                subject: `Event Reminder: ${eventTitle}`,
+                message: `Your event "${eventTitle}" starts in 5 minutes at ${eventStart}.`
+              })
+
+            
+            console.log(`Reminder email sent to ${userEmail}`);
+        });
+    } catch (error) {
+        console.error('CronError : sending email reminders:', error);
+    }
+})
+
+cron.schedule('*/5 * * * *',async()=>{
+    try{
+        const bookingToCancel = await BookingModel.find({status:false})
+
+        const currentTime = new Date()
+
+        //iterate thorugh the each booking and check if that differenece is greater than 5 min then cancel it (1000 * 60)=> milli sec to minutes
+        for(const booking of bookingToCancel){
+            const timeDifference = Math.floor((currentTime-new Date(booking.createdAt))/1000*60)
+
+            if(timeDifference >=5){
+                await cancelBookingFunction(booking._id)
+            }
+        }
+    }catch(err){
+        console.log("Error in the cancel booking in cron",err)
+    }
+})
+
+// cron.schedule(' * * * * * *',()=>{
+//     console.log("Running",new Date())
+// })
+
+
+
+
 
 
 
