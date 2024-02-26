@@ -52,7 +52,7 @@ const { decodeAddress, decodeLatLng } = require("./app/utils/decodeAddress")
 // app.use("/uploads", express.static(staticpath))
 // const upload = multer({ storage: storage })
 
-const {eventUpload,profileUpload} = require("./app/utils/S3/file-hanlding")
+const {eventUpload,profileUpload, categotyUpload} = require("./app/utils/S3/file-hanlding")
 
 
 
@@ -144,10 +144,10 @@ app.delete("/api/event/:eventId/review/:reviewId", authenticateUser, authorizeUs
 
 
 //category APIs
-app.post("/api/category",authenticateUser, authorizeUser(["Admin"]), checkSchema(categoryValidationSchema),categoryCltr.create)
+app.post("/api/category",authenticateUser, authorizeUser(["Admin"]),categotyUpload.single("categoryImage"), checkSchema(categoryValidationSchema),categoryCltr.create)
 app.get("/api/categoryall", categoryCltr.getAll)
 app.get("/api/category/:categoryId", categoryCltr.getOne)// check 
-app.put("/api/category/:categoryId", authenticateUser, authorizeUser(["Admin"]), checkSchema(categoryValidationSchema), categoryCltr.update)
+app.put("/api/category/:categoryId", authenticateUser, authorizeUser(["Admin"]),categotyUpload.single("categoryImage"), checkSchema(categoryValidationSchema), categoryCltr.update)
 app.delete("/api/category/:categoryId", authenticateUser, authorizeUser(["Admin"]), categoryCltr.delete)
 app.get("/api/category",categoryCltr.getAllCatAndEvents)
 app.get("/api/category/:categoryId",categoryCltr.getByCatId)
