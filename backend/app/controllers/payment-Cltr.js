@@ -5,7 +5,8 @@ const stripe = require("stripe")(process.env.STRIPE_KEY);
 const _ = require("lodash");
 const PaymentModel = require("../models/payment-model");
 const ProfileModel = require("../models/profile-model");
-const {cancelBookingFunction} = require("../controllers/booking-Cltr")
+const {cancelBookingFunction} = require("../controllers/booking-Cltr");
+const funEmail = require("../utils/NodeMailer/email");
 
 const paymentCltr = {};
 
@@ -100,7 +101,7 @@ paymentCltr.updatedPayment = async(req,res)=>{
  console.log(payment,"paymentInfo")
     if(payment.status){
       console.log("2")
-      const booking = await BookingModel.findOneAndUpdate({_id:payment.bookingId},{status:true},)
+      const booking = await BookingModel.findOneAndUpdate({_id:payment.bookingId},{status:true},{new:true}).populate("eventId").populate("userId")
         console.log(booking._id,"id")
 
         const updatedProfile = await ProfileModel.findOneAndUpdate(
@@ -111,6 +112,12 @@ paymentCltr.updatedPayment = async(req,res)=>{
 
       res.status(200).json("Payment Successfull", booking.totalAmount,"Rs")
     }
+
+    await funEmail({
+      email: booking.userId.email,
+      subject: "BOOKING CONFIRMED",
+      message: `YOU'R BOOKING IS SUCCESSFULLY ${booking.eventId.title}`
+    })
     if(!payment) return res.status(404).json("Cannot find the Payment Info")
 
   } catch(err){
