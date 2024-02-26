@@ -109,62 +109,24 @@ paymentCltr.updatedPayment = async(req,res)=>{
           { $push: { bookings: booking._id } }
         ) 
 
+        await funEmail({
+          email: booking.userId.email,
+          subject: "BOOKING CONFIRMED",
+          message: `YOU'R BOOKING IS SUCCESSFULLY ${booking.eventId.title}`
+        })
 
       res.status(200).json("Payment Successfull", booking.totalAmount,"Rs")
+    }else{
+      if(!payment) return res.status(404).json("Cannot find the Payment Info")
     }
 
-    await funEmail({
-      email: booking.userId.email,
-      subject: "BOOKING CONFIRMED",
-      message: `YOU'R BOOKING IS SUCCESSFULLY ${booking.eventId.title}`
-    })
-    if(!payment) return res.status(404).json("Cannot find the Payment Info")
+
 
   } catch(err){
     console.log(err)
     return res.status(500).json(err)
   }
 }
-
-// paymentCltr.updatedPayment = async (req, res) => {
-//   const { transactionId } = req.body;
-//   try {
-//     console.log("1");
-//     const payment = await PaymentModel.findOneAndUpdate(
-//       { transaction_Id: transactionId },  // Updated variable name
-//       { status: true },
-//       { new: true }
-//     );
-//     console.log(payment, "paymentInfo");
-//     if (payment && payment.status === true) {
-//       console.log("2");
-//       const booking = await BookingModel.findOneAndUpdate(
-//         { _id: payment.bookingId, userId: req.user.id },
-//         { status: true }
-//       );
-//       console.log(booking);
-//       const addBooking = await ProfileModel.findOneAndUpdate(
-//         { userId: req.user.id },
-//         { $push: { bookings: booking._id } }
-//       );
-//       console.log(addBooking);
-
-//       console.log("3");
-
-//       res.status(200).json({
-//         message: "Payment Successful",
-//         totalAmount: booking.totalAmount,
-//         currency: "Rs"
-//       });
-//     } else {
-//       return res.status(404).json("Cannot find the Payment Info");
-//     }
-//   } catch (err) {
-//     return res.status(500).json("Payment failed");
-//   }
-// };
-
-
 
 paymentCltr.deletePayment  = async(req,res)=>{
   const {paymentId} = req.params
@@ -175,10 +137,10 @@ paymentCltr.deletePayment  = async(req,res)=>{
 
     return res.status(200).json("Your booking is Canceled")
   }catch(err){//write the status code for payments
-    return res.json(EvalError)
+    return res.stauts(400).json(err)
   }
 }
 
 
 
-module.exports = paymentCltr;
+module.exports = paymentCltr
