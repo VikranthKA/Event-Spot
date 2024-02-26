@@ -10,14 +10,9 @@ const funEmail = require("../utils/NodeMailer/email");
 const bookingCltr = {};
 
 bookingCltr.createBooking = async (req, res) => {
-
-    const error = validationResult(req)
-    if(!error.isEmpty()){
-        return res.status(400).json({err:error.array()})
-    }
+///const errors = validation(req) that i am written in the booking validation
     const { eventId } = req.params
     const { tickets } = req.body;
-    console.log(tickets)
 
     try {
         const profile = await ProfileModel.findOne({userId : req.user.id})
@@ -26,22 +21,22 @@ bookingCltr.createBooking = async (req, res) => {
         if (!event) {
             return res.status(404).json({ error: 'Cannot find the Event' });
         }
-        // Transform the incoming tickets array to match the BookingModel structure
+        //  tickets array to match the bookingModel 
         const transformedTickets = tickets?.map(ticket => ({
             ticketId: ticket._id,
-            ticketType: ticket.ticketName,  // Assuming _id is the reference to EventModel
+            ticketType: ticket.ticketName,  
             quantity: ticket.Quantity,
             ticketPrice: ticket.ticketPrice,
-            totalAmount: ticket.ticketPrice * ticket.Quantity, // Include totalAmount for each ticket
+            totalAmount: ticket.ticketPrice * ticket.Quantity,
         }));
         const totalAmount = transformedTickets?.reduce((total, ticket) => total + (ticket?.ticketPrice * ticket?.Quantity), 0);
 
-        // Check if there are enough available seats for the specified ticket types
+        // check if there are enough available seats for the specified ticket types
         const availableSeats = transformedTickets?.every(ticket => {
             const matchingTicket = event?.ticketType?.find(eventTicket => eventTicket?.ticketName === ticket?.ticketType);
 
             if (!matchingTicket) {
-                return false; // Ticket not found in the event.ticketType array
+                return false; // ticket not found in the event.ticketType 
             }
 
             return matchingTicket.remainingTickets >= ticket.quantity;
@@ -66,7 +61,7 @@ bookingCltr.createBooking = async (req, res) => {
             const matchingTicket = transformedTickets.find(ticket => ticket.ticketType === eventTicket.ticketName);
 
             if (matchingTicket) {
-                // Subtract the booked quantity from the remaining tickets
+                // subtract the booked quantity from the remaining tickets
                 eventTicket.remainingTickets -= matchingTicket.quantity;
 
             }
@@ -94,7 +89,7 @@ let events = await EventModel.find({isApproved:true}).populate({
     }
 });
 
-// Populate the userId field inside each review object
+//  userId field inside each review object
 for (let event of events) {
 await ReviewModel.populate(event.reviews, { path: 'reviewId.userId', select: '_id username email' });
 }
@@ -159,25 +154,25 @@ bookingCltr.getAllBookings = async(req,res)=>{
 
 async function cancelBookingFunction(bookingId){
     try {
-        // Find the booking
+        // find the booking
         console.log("In booking")
         const booking = await BookingModel.findById(bookingId)
         console.log(booking)
         
-        // Find the event
+        // find the event
         const event = await EventModel.findById(booking.eventId);
         
-        // Update ticket availability for the event
+        // update tickets for that event
         const updatedTicketTypes = event.ticketType.map(eventTicket => {
             const matchingTicket = booking.tickets.find(ticket => ticket.ticketType === eventTicket.ticketName);
             if (matchingTicket) {
-                // Increment remaining tickets by the quantity of the booked tickets
+                // increment remaining tickets by the quantity of the booked tickets
                 eventTicket.remainingTickets += matchingTicket.quantity;
             }
             return eventTicket;
         });
         const cancelBooking   =  await BookingModel.findByIdAndDelete(bookingId)
-        // Update the event with the updated ticket types
+        // update the event with the updated ticket types
         const updatedEvent = await EventModel.findByIdAndUpdate(
             booking.eventId,
             { ticketType: updatedTicketTypes },
@@ -186,10 +181,8 @@ async function cancelBookingFunction(bookingId){
         console.log(updatedEvent)
         return updatedEvent
     } catch (err) {
-        console.log(err);
-        // You should handle the response in case of an error
-        // res.status(500).json(err);
-        throw err; // Optionally, re-throw the error to be handled by the caller
+        console.log(err)
+        throw err; 
     }
 }
 
@@ -202,7 +195,7 @@ bookingCltr.cancelBooking = async (req, res) => {
         const booking = await BookingModel.find({ _id: bookingId})
         //check the if the payment is create for this user and ticket if that sucess then say payment done
         if(!booking) return res.status(404).json("Booking not found")
-       const data =  await cancelBookingFunction(bookingId)
+       const data =  await cancelBookingFunction(bookingId)//calling the booking function to delete the bookings
        if(!data) return res.status(400).json("Somthing went wrong")
        console.log("success")
        return res.status(200).json({updatedEvent:data})

@@ -25,7 +25,7 @@ const usercltr = require("./app/controllers/user-cltr")
 const eventCltr = require("./app/controllers/event-Cltr")
 const categoryCltr = require("./app/controllers/category-Cltr")
 const profileCltr = require("./app/controllers/profile-Cltr")
-const {bookingCltr} = require("./app/controllers/booking-Cltr")
+const {bookingCltr, cancelBookingFunction} = require("./app/controllers/booking-Cltr")
 const paymentCltr = require("./app/controllers/payment-Cltr")
 const adminCltr = require("./app/controllers/admin-Cltr")
 const reviewCltr = require("./app/controllers/review-Cltr")
@@ -65,6 +65,7 @@ const {validatedRequest,validateFiles,validatedEditRequest} = require("./app/val
 const { nodeCronCltr } = require("./app/controllers/node-cron-Cltr");
 
 const BookingModel = require("./app/models/booking-model")
+const {ticketValidationMiddleware, validateTicketData} = require("./app/validations/booking-validation")
 
 
 ///cron 
@@ -124,7 +125,7 @@ app.get("/api/organiser-events",authenticateUser,eventCltr.getOrganiserEvents)
 
 
 //Booking Api S
-app.post("/api/event/:eventId/booking",authenticateUser,authorizeUser(['Organiser']), bookingCltr.createBooking)
+app.post("/api/event/:eventId/booking",authenticateUser,authorizeUser(['Customer']),ticketValidationMiddleware, validateTicketData,bookingCltr.createBooking)
 app.get("/api/ticket/:bookedId",authenticateUser,bookingCltr.TicketsInfo)
 app.delete("/api/booking/:bookingId",authenticateUser,authorizeUser(['Admin']),bookingCltr.cancelBooking)
 app.get("/api/get/false/bookings",authenticateUser,bookingCltr.getAllBookings)
@@ -151,6 +152,7 @@ app.delete("/api/category/:categoryId", authenticateUser, authorizeUser(["Admin"
 app.get("/api/category",categoryCltr.getAllCatAndEvents)
 app.get("/api/category/:categoryId",categoryCltr.getByCatId)
 
+
 //Admin API_S
 app.get("/api/dashboard",adminCltr.getAggregate)
 
@@ -159,11 +161,13 @@ app.listen(process.env.PORT, () => {
     console.log("Server running on the PORT", process.env.PORT)
 })
 
+
+//send the msg to the for user for booked event
 cron.schedule("0 0 * * *", async () => {
     try {
-        // find bookings with event start time within the next 5 minutes
+        // find bookings with eventStartDateTime within the next 5 minutes in the events
         const currentDateTime = new Date()
-        const futureDateTime = new Date(currentDateTime.getTime() + 5 * 60000)// 5 min  now
+        const futureDateTime = new Date(currentDateTime.getTime() + 5 * 60000)// 5 min  now converting into milli to sec
         const bookings = await BookingModel.find().populate({
             path: 'eventId',
             match: {
@@ -175,14 +179,14 @@ cron.schedule("0 0 * * *", async () => {
             select: 'email'
         });
 
-        // Filter out bookings where eventId.eventStartDateTime is less than or equal to futureDateTime
-        const filteredBookings = bookings.filter(booking => booking.eventId !== null);
+        // filter out bookings where eventId.eventStartDateTime is less than or equal to futureDateTime
+        const filteredBookings = bookings.filter(booking => booking.eventId !== null)
 
 
         filteredBookings.forEach(async (booking) => {
-            const userEmail = booking.userId.email;
-            const eventStart = booking.eventId.eventStartDateTime; // Access eventStartDateTime from populated eventId
-            const eventTitle = booking.eventId.title; // Assuming you have a 'title' field in your EventModel
+            const userEmail = booking.userId.email
+            const eventStart = booking.eventId.eventStartDateTime //  eventStartDateTime from populated eventId
+            const eventTitle = booking.eventId.title
 
             await funEmail({
                 email: userEmail,
@@ -194,10 +198,10 @@ cron.schedule("0 0 * * *", async () => {
             console.log(`Reminder email sent to ${userEmail}`);
         });
     } catch (error) {
-        console.error('CronError : sending email reminders:', error);
+        console.error('CronError : sending email reminders:', error)
     }
 })
-
+//deleting the booking because of false booking and not paid
 cron.schedule('*/5 * * * *',async()=>{
     try{
         const bookingToCancel = await BookingModel.find({status:false})

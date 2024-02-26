@@ -3,8 +3,13 @@ const ProfileModel = require("../models/profile-model")
 const _ = require("lodash")
 const { validationResult } = require("express-validator")
 const axios = require("axios")
+const geolib = require('geolib')
 
-
+async function distanceBtwThem(source, dest) {
+    const distanceInMeters = geolib.getDistance(source, dest);
+    const distanceInKilometers = distanceInMeters / 1000; // Convert meters to kilometers
+    return distanceInKilometers+"km";
+}
 async function getCoByGeoCode(data,res){
     try{
     const addressResponse =await axios.get(`https://geocode.maps.co/search?q=${data}&api_key=${process.env.GEO_CODE_API_KEY}`)
@@ -124,9 +129,19 @@ profileCltr.getOne = async (req, res) => {
              populate:{
              path:"eventId",
              model:"EventModel",
-             select:"_id title eventStartDateTime" 
+             select:"_id title eventStartDateTime location" 
             }
         })
+
+        // console.log(profile," i am prfile")
+        // const newProfile = profile.
+        // for(const eventKey in profile.bookings.eventId){
+        //     console.log(eventKey.addressInfo.location,"location")
+        // }
+        const array = await Promise.all(profile.bookings.map(async(booking)=>{
+            return distanceBtwThem( profile.location.coordinates, booking.eventId.location.coordinates)
+        }))
+        console.log(array)
 
         
         if (!profile) {
