@@ -108,8 +108,44 @@ profileCltr.create = async (req, res) => {
 
 
 profileCltr.getAll=async(req,res)=>{
+
+    const search = req.query.search || null
+    // console.log(search,"search")
+    const searchQuery = {username : { $regex: search,$options:"i" }}
+
+
     try{
-        const allProfile=await ProfileModel.find().populate("userId")
+        let allProfile
+        if(search){
+            let allProfileif=await ProfileModel.find().populate({
+                path:"userId",
+                match:searchQuery
+            }).sort({createdAt:-1})
+
+            // console.log("running the if")
+
+            if(allProfileif.length > 0 ){
+                const filteredProfiles = allProfileif.filter(profile => profile.userId !== null)
+                if(filteredProfiles.length > 0) allProfile = filteredProfiles
+            } 
+        }else if(search === null){
+            let allProfileElse=await ProfileModel.find().populate("userId").sort({createdAt:-1})
+            // console.log("running the else")
+            allProfile = allProfileElse
+        }
+        
+        if(allProfile?.length > 0 ){
+            const finalProfile = allProfile.filter((profile) => {
+                // console.log(req.user.id,profile.userId._id.toString(),"id")
+                return profile.userId._id.toString() !== req.user.id;
+            })
+            if(finalProfile?.length > 0) allProfile = finalProfile
+
+        }
+        
+        
+            
+
         res.status(200).json(allProfile)
     }catch(err){
         console.log(err)

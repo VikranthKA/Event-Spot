@@ -90,15 +90,16 @@ app.post("/api/reset-password/:id/:token",usercltr.resetPassword)
 app.post("/api/profile",authenticateUser, profileUpload.single("profilePic"),checkSchema(profileSchema), profileCltr.create)
 app.get("/api/profile",authenticateUser, profileCltr.getOne)
 app.put("/api/profile", profileUpload.single("profilePic"),authenticateUser,profileCltr.update)
+app.get("/api/profile-all",authenticateUser,authorizeUser(['Admin']),profileCltr.getAll)
 
 //user cannot delete the profile but i have written the cltr
 
 //event ApiS
 app.post('/api/getAddress')
  
-app.post("/api/event",authenticateUser,eventUpload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
+app.post("/api/event",authenticateUser,authorizeUser(['Organiser']),eventUpload.fields([{ name: 'ClipFile', maxCount: 1 },{ name: 'BrochureFile', maxCount: 1 }]),validateFiles,validatedRequest,eventCltr.create)
 app.get("/api/paginate/event",eventCltr.paginate)
-app.put("/api/event/:eventId",authenticateUser,eventCltr.update)
+app.put("/api/event/:eventId",authenticateUser,authorizeUser(['Organiser']),eventCltr.update)
 
 app.get("/api/event/:eventId",eventCltr.getOne)
 app.put('/api/event/approve/:eventId', eventCltr.approveEvent);

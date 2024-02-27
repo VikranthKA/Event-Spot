@@ -513,8 +513,8 @@ eventCltr.approveEvent = async (req, res) => {
 
 
 eventCltr.update = async (req, res) => {
-    console.log(req.body)
-    return res.json(req.body)
+    console.log(req.body,"in the req")
+    // return res.json(req.body)
 
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
@@ -545,12 +545,12 @@ eventCltr.update = async (req, res) => {
             }))
             event.totalTickets = await totalCount(body.ticketType)
         }
-        if(body.addressInfo.address ) {
+        if(body?.addressInfo?.address ) {
             event.addressInfo = {
                 address: body.addressInfo.address,
             }
         }
-        if(body.addressInfo.city ) {
+        if(body?.addressInfo?.city ) {
             event.addressInfo = {
                 address: body.addressInfo.city,
             }
@@ -559,24 +559,27 @@ eventCltr.update = async (req, res) => {
         
         if(event.ticketSaleEndTime)event.ticketSaleEndTime = momentConvertion(body.eventEndDateTime)
 
-        event.posters = [{
-            ClipName: body.ClipName,
-            image: req.files.ClipFile[0].filename
-        }, {
-            BrochureName: body.BrochureName,
-            image: req.files.BrochureFile[0].filename
-        }]
+        // if(req.files.length > 0 && req.files.ClipFile[0].filename && req.files.BrochureFile[0].filename){
+
+        //     event.posters = [{
+        //         ClipName: body.ClipName,
+        //         image: req.files.ClipFile[0].filename
+        //     }, {
+        //         BrochureName: body.BrochureName,
+        //         image: req.files.BrochureFile[0].filename
+        //     }]
+        // }
 
         
 
 
         event.location = {
             type: "Point",
-            coordinates: [body.location.lon, body.location.lat]
+            coordinates: [body?.location?.lon, body?.location?.lat]
         }
-        event.actors = body.Actors
+        event.actors = body?.Actors
 
-        const updatedEvent = await findOneAndUpdate({_id:req.params.eventId,organiserId:req.user.id},event,{new:true}).populate({
+        const updatedEvent = await EventModel.findOneAndUpdate({_id:req.params.eventId,organiserId:req.user.id},event,{new:true}).populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"
@@ -590,7 +593,7 @@ eventCltr.update = async (req, res) => {
             }
         })
 
-        if(categoryId) await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
+        if(body.categoryId) await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
 
             
         return res.json(updatedEvent)

@@ -4,6 +4,7 @@ const _ = require("lodash")
 const bcryptjs = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const funEmail = require("../utils/NodeMailer/email")
+const ProfileModel = require("../models/profile-model")
 
 const userCltr = {}
 
@@ -24,10 +25,13 @@ userCltr.register = async (req, res) => {
       const userCount = await UserModel.countDocuments();
 
       if (userCount === 0) {
-        user.role = "Admin";
+        user.role = "Admin"
       }
-
+      const profile = new ProfileModel({
+        userId:user._id
+      })
       await user.save()
+
       await funEmail({
         email: user.email,
         subject: "REGISTRATION STATUS",
@@ -54,7 +58,7 @@ userCltr.login = async (req, res) => {
       if (!user) {
         return res.status(400).json({ error: "invalid email/password" })
       }
-      const result = await bcryptjs.compare(body.password, user.password)
+      const result = bcryptjs.compare(body.password, user.password)
       if (!result) {
         return res.status(400).json("invalid email/password")
       }
