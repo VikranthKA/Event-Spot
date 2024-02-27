@@ -4,11 +4,12 @@ const BookingModel = require("../models/booking-model")
 
 const nodeCronCltr =()=>{ 
 
+//send the msg to the for user for booked event
 cron.schedule("0 0 * * *", async () => {
     try {
-        // find bookings with event start time within the next 5 minutes
+        // find bookings with eventStartDateTime within the next 5 minutes in the events
         const currentDateTime = new Date()
-        const futureDateTime = new Date(currentDateTime.getTime() + 5 * 60000)// 5 min  now
+        const futureDateTime = new Date(currentDateTime.getTime() + 5 * 60000)// 5 min  now converting into milli to sec
         const bookings = await BookingModel.find().populate({
             path: 'eventId',
             match: {
@@ -20,14 +21,14 @@ cron.schedule("0 0 * * *", async () => {
             select: 'email'
         });
 
-        // Filter out bookings where eventId.eventStartDateTime is less than or equal to futureDateTime
-        const filteredBookings = bookings.filter(booking => booking.eventId !== null);
+        // filter out bookings where eventId.eventStartDateTime is less than or equal to futureDateTime
+        const filteredBookings = bookings.filter(booking => booking.eventId !== null)
 
 
         filteredBookings.forEach(async (booking) => {
-            const userEmail = booking.userId.email;
-            const eventStart = booking.eventId.eventStartDateTime; // Access eventStartDateTime from populated eventId
-            const eventTitle = booking.eventId.title; // Assuming you have a 'title' field in your EventModel
+            const userEmail = booking.userId.email
+            const eventStart = booking.eventId.eventStartDateTime //  eventStartDateTime from populated eventId
+            const eventTitle = booking.eventId.title
 
             await funEmail({
                 email: userEmail,
@@ -39,10 +40,10 @@ cron.schedule("0 0 * * *", async () => {
             console.log(`Reminder email sent to ${userEmail}`);
         });
     } catch (error) {
-        console.error('CronError : sending email reminders:', error);
+        console.error('CronError : sending email reminders:', error)
     }
 })
-
+//deleting the booking because of false booking and not paid
 cron.schedule('*/5 * * * *',async()=>{
     try{
         const bookingToCancel = await BookingModel.find({status:false})

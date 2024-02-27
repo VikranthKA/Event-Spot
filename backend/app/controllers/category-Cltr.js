@@ -9,9 +9,13 @@ categoryCltr.create = async(req,res)=>{
     if(!errors.isEmpty()){
         return res.status(400).json({error:errors.array()})
     }else{
+        console.log(req.file.key,"image")
         const body = _.pick(req.body,["name"])
         try{
-            const cat = new CategoryModel(body)
+            const cat = new CategoryModel({
+                name: body.name,
+                image:req.file.key,
+            })
             await cat.save()
             res.status(201).json(cat)
         }catch(err){
@@ -90,8 +94,16 @@ categoryCltr.update = async(req,res)=>{
 
     }else{
         const body = _.pick(req.body,["name"])
+        const finalBody = {
+            name:body.name,
+            image:req.file.key,
+
+        }
+
+
+
         try{
-            const cat = await CategoryModel.findByIdAndUpdate({_id:categoryId},body,{new:true})
+            const cat = await CategoryModel.findByIdAndUpdate({_id:categoryId},finalBody,{new:true})
             res.status(201).json(cat)
 
         }catch(err){

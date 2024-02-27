@@ -1,68 +1,24 @@
-const { validationResult } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 
-const ticketValidationSchema = {
-    ticketName: {
-        notEmpty: {
-            errorMessage: "Ticket name cannot be empty"
-        },
-        isLength: {
-            options: { min: 2, max: 50 },
-            errorMessage: "Ticket name must be between 2 and 50 characters"
-        }
-    },
-    ticketPrice: {
-        isNumeric: {
-            errorMessage: "Ticket price must be a number"
-        },
-        notEmpty: {
-            errorMessage: "Ticket price cannot be empty"
-        }
-    },
-    ticketCount: {
-        isNumeric: {
-            errorMessage: "Ticket count must be a number"
-        },
-        notEmpty: {
-            errorMessage: "Ticket count cannot be empty"
-        }
-    },
-    remainingTickets: {
-        isNumeric: {
-            errorMessage: "Remaining tickets must be a number"
-        },
-        notEmpty: {
-            errorMessage: "Remaining tickets cannot be empty"
-        }
-    },
-    _id: {
-        notEmpty: {
-            errorMessage: "Ticket ID cannot be empty"
-        }
-    },
-    Quantity: {
-        isNumeric: {
-            errorMessage: "Quantity must be a number"
-        },
-        notEmpty: {
-            errorMessage: "Quantity cannot be empty"
-        }
-    }
-}
+const ticketValidationMiddleware = [
+  body('tickets').isArray().withMessage('Tickets must be provided as an array'),
+  body('tickets.*.ticketPrice').notEmpty().withMessage('Ticket price cannot be empty')
+                               .isNumeric().withMessage('Ticket price must be a number'),
+  body('tickets.*.ticketCount').notEmpty().withMessage('Ticket count cannot be empty')
+                               .isNumeric().withMessage('Ticket count must be a number'),
+  body('tickets.*.remainingTickets').notEmpty().withMessage('Remaining tickets cannot be empty')
+                                     .isNumeric().withMessage('Remaining tickets must be a number'),
+  body('tickets.*._id').notEmpty().withMessage('_id must be provided'),
+  body('tickets.*.Quantity').notEmpty().withMessage('Ticket quantity cannot be empty')
+                            .isNumeric().withMessage('Ticket quantity must be a number'),
+];
 
+const validateTicketData = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  next();
+};
 
-
-function validateTicket(ticket) {
-    const errors = validationResult(ticket);
-
-    if (!errors.isEmpty()) {
-        throw new Error(errors.array().map(error => error.msg).join(", "));
-    }
-}
-
-function validateTicketArray(ticketArray) {
-    ticketArray.forEach(ticket => {
-        validateTicket(ticket);
-    });
-}
-
-module.exports = { ticketValidationSchema, validateTicket, validateTicketArray }
+module.exports = { ticketValidationMiddleware, validateTicketData };

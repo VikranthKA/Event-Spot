@@ -27,7 +27,12 @@ userCltr.register = async (req, res) => {
         user.role = "Admin";
       }
 
-      await user.save();
+      await user.save()
+      await funEmail({
+        email: user.email,
+        subject: "REGISTRATION STATUS",
+        message: "YOU'R REGISTRATION IS SUCCESSFULLY PLEASE LOGIN TO ENJOY AMAZING EVENTS"
+      })
       const { username } = user
       return res.status(201).json(username);
     } catch (err) {
@@ -53,11 +58,7 @@ userCltr.login = async (req, res) => {
       if (!result) {
         return res.status(400).json("invalid email/password")
       }
-      await funEmail({
-        email: user.email,
-        subject: "LOGIN STATUS",
-        message: "YOU'R LOGIN IS SUCCESSFULLY"
-      })
+
       if (user.isActive) {
         const tokenData = {
           id: user._id,

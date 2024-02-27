@@ -371,22 +371,32 @@ eventCltr.getAll = async (req, res) => {
 
 
 eventCltr.ssp = async(req,res)=>{
-    const {search} = req.query || ""
+    const search = req.query.search ? String(req.query.search) : ""
     const {sortBy} = req.query || 'title'
+    // console.log(sortBy,"in sort")
     const {order} =  req.query || -1
+    const city = req.query.city ? String(req.query.city):""
 
-    console.log(search)
-    const searchQuery = {title:{$regex:search,$options:"i"}}
+
+    // console.log(search,city)
+    const searchQuery = { 
+                             isApproved:true,
+                            title:{$regex:search,$options:"i"}
+                        }
+    const cityQuery ={
+        isApproved:true,
+        'addressInfo.city' : { $regex: city,$options:"i" }
+    }
     const sortQuery = {}
     sortQuery[sortBy] = order === 'asc' ? 1 : -1
     const page  = parseInt(req.query.page)  || 1
-    const limit = parseInt(req.query.limit) || 10
+    const limit = parseInt(req.query.limit) || 3
+    console.log(page,limit)
 
     try{
         const events = await EventModel
                                     .find({
-                                        isApproved:true,
-                                        ...searchQuery
+                                        $and: [searchQuery, cityQuery]
                                     }).sort(
                                         sortQuery
                                     ).skip(
