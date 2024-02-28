@@ -177,14 +177,17 @@ eventCltr.create = async (req, res) => {
             email: process.env.ADMIN_EMAIL,
             subject: "NEW EVENT CREATED",
             message: `
-                    Mr/Mrs 
-                    ${populatedEvent.organiserId.username} 
-                    created the 
-                    ${populatedEvent.title} on 
-                    ${populatedEvent.createdAt} Click here to view on you'r dashboard
-                    ${`${process.env.SERVER_URL}/all-events`} or 
-                    ${`${process.env.SERVER_URL}/event-info/${populatedEvent._id}`} 
-                    `
+            Mr/Mrs 
+            ${populatedEvent.organiserId.username} 
+            created the 
+            ${populatedEvent.title} on 
+            ${populatedEvent.createdAt} 
+            Click here to view on your dashboard: 
+            ${process.env.SERVER_URL}/all-events 
+            or 
+            ${process.env.SERVER_URL}/event-info/${populatedEvent._id}
+        `
+        
           })
             
         return res.json(populatedEvent)
@@ -536,7 +539,7 @@ eventCltr.update = async (req, res) => {
     }
     const body = _.pick(req.body,
         [
-            "eventStartDateTime", 'title', 'description', "ClipName", "BrochureName", 'categoryId',
+            "eventStartDateTime","eventEndDateTime", 'title', 'description', "ClipName", "BrochureName", 'categoryId',
             "ticketType", "venueName", "addressInfo", "ticketSaleStartTime", "ticketSaleEndTime", "youTube", "location", "Actors"
         ])
     const event = {}
@@ -612,15 +615,15 @@ eventCltr.update = async (req, res) => {
         await funEmail({
             email: process.env.ADMIN_EMAIL,
             subject: "NEW EVENT CREATED",
-            message: `
-                    Mr/Mrs 
-                    ${populatedEvent.organiserId.username} 
-                    created the 
-                    ${populatedEvent.title} on 
-                    ${populatedEvent.createdAt} Click here to view on you'r dashboard
-                    ${`${process.env.SERVER_URL}/all-events`} or 
-                    ${`${process.env.SERVER_URL}/event-info/${populatedEvent._id}`} 
-                    `
+            message:` Mr/Mrs 
+                ${populatedEvent.organiserId.username}created the 
+                ${populatedEvent.title} on 
+                ${populatedEvent.createdAt} and Updated the event on 
+                ${populatedEvent.createdAt}Click here to view on your dashboard: 
+                ${process.env.SERVER_URL}/all-events  or 
+                ${process.env.SERVER_URL}/event-info/${populatedEvent._id}
+                   `
+        
           })
 
         if(body.categoryId) await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
