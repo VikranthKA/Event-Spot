@@ -131,6 +131,9 @@ app.get("/api/ticket/:bookedId",authenticateUser,bookingCltr.TicketsInfo)
 app.delete("/api/booking/:bookingId",authenticateUser,authorizeUser(['Admin']),bookingCltr.cancelBooking)
 app.get("/api/get/false/bookings",authenticateUser,bookingCltr.getAllBookings)
 
+//get the all booking based on the eventId
+app.get('/api/booked-users',authenticateUser,authorizeUser(['Admin','Organiser']),bookingCltr.bookedUsers)
+
 
 //Payment APIs
 app.post("/api/booking/:bookingId/payment",authenticateUser,paymentCltr.paymentCheckoutSession)
@@ -163,7 +166,7 @@ app.listen(process.env.PORT, () => {
 })
 
 
-//send the msg to the for user for booked event
+//send the msg to the user for booked event
 cron.schedule("0 0 * * *", async () => {
     try {
         // find bookings with eventStartDateTime within the next 5 minutes in the events

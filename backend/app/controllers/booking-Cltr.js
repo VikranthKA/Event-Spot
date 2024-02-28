@@ -229,5 +229,27 @@ bookingCltr.cancelBooking = async (req, res) => {
 }
 
 
+bookingCltr.bookedUsers = async(req,res)=>{
+    const {eventId} = req.query 
+    console.log(eventId,"sadf")
+
+    try{
+        if(eventId){
+
+            //finding the event and then booked user for that event 
+            const bookedUsers = await BookingModel.find({eventId:eventId}).populate({
+                path:"userId",
+                model:"UserModel",
+                select:"_id username email"
+            })
+            return res.status(200).json(bookedUsers)
+        }else{
+            return res.status(404).json("Event Id is empty")
+        }
+    }catch(err){
+        console.log(err)
+        res.status(400).json(err)
+    }
+}
 
 module.exports = {bookingCltr,cancelBookingFunction}
