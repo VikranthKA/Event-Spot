@@ -219,6 +219,14 @@ adminCltr.getAggregate = async (req, res) => {
 
       dashboard.popularEvent = await EventModel.aggregate([
         {
+          $match: {
+              eventStartDateTime: { $lt: new Date() }, // Event has started
+              eventEndDateTime: { $gt: new Date() }, // Event has not ended yet
+              isApproved:true
+
+          }
+      },
+        {
             $unwind: "$ticketType" 
         },
         {

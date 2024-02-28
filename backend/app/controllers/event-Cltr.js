@@ -702,6 +702,12 @@ eventCltr.getOrganiserEvents = async(req,res)=>{
 eventCltr.mostPopularEvent = async(req,res)=>{
     const pipeline = [
         {
+            $match: {
+                eventStartDateTime: { $lt: new Date() }, // Event has started
+                eventEndDateTime: { $gt: new Date() } // Event has not ended yet
+            }
+        },
+        {
             $unwind: "$ticketType" 
         },
         {

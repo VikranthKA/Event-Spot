@@ -12,7 +12,7 @@ const eventSchema = new Schema({
         url: String
     },
 
-// we add the another video attribute to this
+// we can add the another video attribute to this
     posters:[{
         ClipName:String,
         image:{
