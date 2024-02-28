@@ -8,6 +8,7 @@ const _ = require('lodash')
 const CategoryModel = require("../models/category-model")
 const ProfileModel = require("../models/profile-model")
 const ReviewModel = require("../models/review-model")
+const funEmail = require("../utils/NodeMailer/email")
 
 
 
@@ -99,7 +100,7 @@ eventCltr.create = async (req, res) => {
     console.log(req.files)
     const body = _.pick(req.body,
         [
-            "eventStartDateTime", 'title', 'description', "ClipName", "BrochureName", 'categoryId',
+            "eventStartDateTime","eventEndDateTime", 'title', 'description', "ClipName", "BrochureName", 'categoryId',
             "ticketType", "venueName", "addressInfo", "ticketSaleStartTime", "ticketSaleEndTime", "youTube", "location", "Actors"
         ])
     
@@ -113,6 +114,8 @@ eventCltr.create = async (req, res) => {
         event.categoryId = body.categoryId
 
         event.eventStartDateTime = momentConvertion(body.eventStartDateTime)
+
+        event.eventEndDateTime = momentConvertion(body.eventEndDateTime)
 
         event.ticketType = await body.ticketType.map((ele) => ({
             ticketName: ele.ticketName,
@@ -520,7 +523,7 @@ eventCltr.approveEvent = async (req, res) => {
             return res.status(500).json(e);
         }
     }
-};
+}
 
 
 eventCltr.update = async (req, res) => {
@@ -546,6 +549,9 @@ eventCltr.update = async (req, res) => {
         if(body.categoryId) event.categoryId = body.categoryId
 
         if(event.eventStartDateTime) event.eventStartDateTime = momentConvertion(body.eventStartDateTime)
+        
+        if(event.eventEndDateTime) event.eventEndDateTime = momentConvertion(body.eventEndDateTime)
+
 
         if(body.ticketType) {
             event.ticketType = await body.ticketType.map((ele) => ({
