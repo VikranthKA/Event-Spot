@@ -234,7 +234,7 @@ adminCltr.getAggregate = async (req, res) => {
             $sort: { ticketsSold: -1 }
         },
         {
-            $limit: 10
+            $limit: 5
         }
     ])
 

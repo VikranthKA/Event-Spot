@@ -155,9 +155,7 @@ eventCltr.create = async (req, res) => {
         // if (event.ticketSaleStartTime >= event.eventStartDateTime) return res.status(400).json("Ticket live on must be greater than event start time")
 
         await event.save()
-        // await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { event: event._id } })
         await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: {eventId:event._id} } })//check
-        // await EventModel.findByIdAndUpdate(eventId, { $pull: { reviews: { reviewId } } });
 
         const populatedEvent = await EventModel.populate(event, [
             { path: 'organiserId', select: '_id username email' },
@@ -171,8 +169,21 @@ eventCltr.create = async (req, res) => {
               }
             }
           ])
+
+          await funEmail({
+            email: process.env.ADMIN_EMAIL,
+            subject: "NEW EVENT CREATED",
+            message: `
+                    Mr/Mrs 
+                    ${populatedEvent.organiserId.username} 
+                    created the 
+                    ${populatedEvent.title} on 
+                    ${populatedEvent.createdAt} Click here to view on you'r dashboard
+                    ${`${process.env.SERVER_URL}/all-events`} or 
+                    ${`${process.env.SERVER_URL}/event-info/${populatedEvent._id}`} 
+                    `
+          })
             
-        console.log(event,"goodmoring")
         return res.json(populatedEvent)
     } catch (e) {
         console.log(e)
@@ -478,13 +489,13 @@ eventCltr.approveEvent = async (req, res) => {
       );
   
       if (!updatedEvent) {
-        return res.status(404).json({ message: 'Event not found' });
+        return res.status(404).json({ message: 'Event not found' })
       }
   
       res.status(200).json(updatedEvent);
     } catch (err) {
       console.error(err);
-      res.status(500).json({ message: 'Internal Server Error' });
+      res.status(500).json({ message: 'Internal Server Error' })
     }
   };
   
@@ -579,7 +590,7 @@ eventCltr.update = async (req, res) => {
         }
         event.actors = body?.Actors
 
-        const updatedEvent = await EventModel.findOneAndUpdate({_id:req.params.eventId,organiserId:req.user.id},event,{new:true}).populate({
+        const populatedEvent = await EventModel.findOneAndUpdate({_id:req.params.eventId,organiserId:req.user.id},event,{new:true}).populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"
@@ -592,11 +603,24 @@ eventCltr.update = async (req, res) => {
                 select: '_id username email'
             }
         })
+        await funEmail({
+            email: process.env.ADMIN_EMAIL,
+            subject: "NEW EVENT CREATED",
+            message: `
+                    Mr/Mrs 
+                    ${populatedEvent.organiserId.username} 
+                    created the 
+                    ${populatedEvent.title} on 
+                    ${populatedEvent.createdAt} Click here to view on you'r dashboard
+                    ${`${process.env.SERVER_URL}/all-events`} or 
+                    ${`${process.env.SERVER_URL}/event-info/${populatedEvent._id}`} 
+                    `
+          })
 
         if(body.categoryId) await CategoryModel.findByIdAndUpdate(event.categoryId, { $push: { events: event._id } })
 
             
-        return res.json(updatedEvent)
+        return res.json(populatedEvent)
     } catch (err) {
         console.log(err)
         res.status(500).json({err})
@@ -646,7 +670,7 @@ eventCltr.getOneEvent = async (req, res) => {
 
 eventCltr.getOrganiserEvents = async(req,res)=>{
     try{
-        const orgEvents = await EventModel.find({organiserId:req.user.id}).populate({
+        const orgEvents = await EventModel.find({organiserId:req.user.id}).sort({createdAt:-1}).populate({
             path: "organiserId", select: "_id username email"
         }).populate({
             path: "categoryId" ,select:"name"
