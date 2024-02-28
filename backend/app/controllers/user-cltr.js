@@ -30,7 +30,9 @@ userCltr.register = async (req, res) => {
       const profile = new ProfileModel({
         userId:user._id
       })
+
       await user.save()
+      await profile.save()
 
       await funEmail({
         email: user.email,

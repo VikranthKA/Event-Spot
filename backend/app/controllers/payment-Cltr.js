@@ -137,7 +137,7 @@ paymentCltr.deletePayment  = async(req,res)=>{
 
     return res.status(200).json("Your booking is Canceled")
   }catch(err){//write the status code for payments
-    return res.stauts(400).json(err)
+    return res.status(400).json(err)
   }
 }
 

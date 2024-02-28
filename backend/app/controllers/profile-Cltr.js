@@ -154,6 +154,7 @@ profileCltr.getAll=async(req,res)=>{
 }
 
 profileCltr.getOne = async (req, res) => {
+
     try {
         // Find the profile by profileId and ensure it belongs to the authenticated user
         const profile = await ProfileModel.findOne({ userId: req.user.id })
@@ -164,8 +165,12 @@ profileCltr.getOne = async (req, res) => {
              path:"bookings",
              populate:{
              path:"eventId",
+             
              model:"EventModel",
              select:"_id title eventStartDateTime location" 
+            },
+            options: {
+                sort: { createdAt: -1 }
             }
         })
 
