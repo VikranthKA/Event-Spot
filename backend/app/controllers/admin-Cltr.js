@@ -68,6 +68,8 @@ adminCltr.getUser = async(req,res)=>{
 }
 
 adminCltr.getAggregate = async (req, res) => {
+  console.log(dashboard.popularEvent,"1")
+
     try {
         const dashboard = {
             userInfo:{
@@ -86,6 +88,7 @@ adminCltr.getAggregate = async (req, res) => {
             revenuePerUser:0,
             paymentType:0,
             totalCatPerEvent:0,
+            notworking:["NOT WORKING"]
 
         }
 
@@ -218,14 +221,14 @@ adminCltr.getAggregate = async (req, res) => {
       ])//return a array
 
       dashboard.popularEvent = await EventModel.aggregate([
-        {
-          $match: {
-              eventStartDateTime: { $lt: new Date() }, // Event has started
-              eventEndDateTime: { $gt: new Date() }, // Event has not ended yet
-              isApproved:true
+      //   {
+      //     $match: {
+      //         eventStartDateTime: { $lt: new Date() }, // Event has started
+      //         eventEndDateTime: { $gt: new Date() }, // Event has not ended yet
+      //         isApproved:true
 
-          }
-      },
+      //     }
+      // },
         {
             $unwind: "$ticketType" 
         },
@@ -241,11 +244,12 @@ adminCltr.getAggregate = async (req, res) => {
         {
             $sort: { ticketsSold: -1 }
         },
-        {
-            $limit: 5
-        }
+        // {
+        //     $limit: 5
+        // }
     ])
-
+    console.log("Working")
+    console.log(dashboard.popularEvent,"events")
     dashboard.category.info = await EventModel.aggregate([
         {
             $group:{
