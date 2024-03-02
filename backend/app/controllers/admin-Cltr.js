@@ -68,7 +68,6 @@ adminCltr.getUser = async(req,res)=>{
 }
 
 adminCltr.getAggregate = async (req, res) => {
-  console.log(dashboard.popularEvent,"1")
 
     try {
         const dashboard = {
