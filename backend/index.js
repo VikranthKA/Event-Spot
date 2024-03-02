@@ -126,7 +126,7 @@ app.get("/api/organiser-events",authenticateUser,eventCltr.getOrganiserEvents)
 
 
 //Booking Api S
-app.post("/api/event/:eventId/booking",authenticateUser,authorizeUser(['Customer']),ticketValidationMiddleware,validateTicketData,bookingCltr.createBooking)
+app.post("/api/event/:eventId/booking",authenticateUser,ticketValidationMiddleware,validateTicketData,bookingCltr.createBooking)
 app.get("/api/ticket/:bookedId",authenticateUser,bookingCltr.TicketsInfo)
 app.delete("/api/booking/:bookingId",authenticateUser,authorizeUser(['Admin']),bookingCltr.cancelBooking)
 app.get("/api/get/false/bookings",authenticateUser,bookingCltr.getAllBookings)
