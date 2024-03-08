@@ -243,12 +243,10 @@ adminCltr.getAggregate = async (req, res) => {
         {
             $sort: { ticketsSold: -1 }
         },
-        // {
-        //     $limit: 5
-        // }
+        {
+            $limit: 5
+        }
     ])
-    console.log("Working")
-    console.log(dashboard.popularEvent,"events")
     dashboard.category.info = await EventModel.aggregate([
         {
             $group:{
